@@ -1,0 +1,293 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Cobb Web Generator v0.4.9</title><style>
+:root{color-scheme:dark;font:14px system-ui,-apple-system,sans-serif;background:#0b1019;color:#e8edf6}*{box-sizing:border-box}body{margin:0;display:grid;grid-template-columns:320px 1fr;min-height:100vh}aside{padding:22px;background:#151c29;border-right:1px solid #303b4b;overflow-y:auto;max-height:100vh}h1{font-size:22px;letter-spacing:-.05em;margin:0}p{color:#9ba9be;font-size:12px;line-height:1.5;margin:7px 0 18px}.primary{background:#a9d4ec;color:#09131e;font-weight:800;border:0}button,input,select{font:inherit}button{cursor:pointer;border:1px solid #4b5b70;background:#29374a;color:#e8edf6;border-radius:9px;padding:10px 12px}button:hover{filter:brightness(1.15)}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid #9bd7ff;outline-offset:2px}.full{width:100%;margin:0 0 12px}.buttons{display:grid;grid-template-columns:1fr 1fr;gap:8px}.control{margin:16px 0}.control label{display:flex;justify-content:space-between;margin-bottom:7px;color:#cbd5e3;font-size:13px}.control output{color:#a8d5ed;font-variant-numeric:tabular-nums}.control input[type=range]{width:100%;accent-color:#a8d5ed}.control select,.seed{width:100%;padding:9px;background:#222d3e;border:1px solid #445167;border-radius:8px;color:white}.small{font-size:11px;color:#94a3b8}hr{border:0;border-top:1px solid #354253;margin:20px 0}main{position:relative;min-width:0;display:flex;flex-direction:column}.top{padding:12px 18px;background:#101724;display:flex;gap:16px;align-items:center;justify-content:space-between;flex-wrap:wrap;border-bottom:1px solid #2b394b}.top span{font-size:12px;color:#a9b8ca}#stage{position:relative;flex:1;min-height:520px;overflow:hidden;background:#070d18;touch-action:none}canvas{display:block;width:100%;height:100%}.bottom{padding:10px 16px;display:flex;justify-content:space-between;color:#8c9caf;font-size:11px;gap:12px}.toggle{display:flex;align-items:center;gap:7px;font-size:12px}.toggle input{accent-color:#a8d5ed}@media(max-width:760px){body{display:flex;flex-direction:column}aside{max-height:none}#stage{height:65vh;flex:auto;min-height:360px}}
+</style></head><body><aside><h1>Cobb Web Generator <span style="color:#8ea5bb;font-size:13px">v0.4.9</span></h1><p>Built on the original v0.8 silk engine. All free, offline, and generated in your browser.</p><button class="primary full" id="random">⤨ Randomize All</button><div class="control"><label for="seed">Seed</label><input class="seed" id="seed" value="COBB-0804" spellcheck="false"></div><div class="buttons"><button id="regenerate">↻ Regenerate</button><button id="copy">Copy config</button></div><hr><div id="controls"></div><hr><div class="control"><label for="light">Lighting</label><select id="light"><option value="moon">Moonlight</option><option value="warm">Warm</option><option value="studio">Studio</option><option value="none">Unlit / flat</option></select></div><div class="control"><label for="lightDirection">Light direction <output id="lightDirectionValue">25°</output></label><input id="lightDirection" type="range" min="0" max="360" value="25"></div><div class="control"><label for="lightIntensity">Light intensity <output id="lightIntensityValue">75%</output></label><input id="lightIntensity" type="range" min="0" max="100" value="75"></div><div class="control"><label for="silk">Silk color</label><select id="silk"><option value="blue">Moon silver</option><option value="white">Pearl white</option><option value="gold">Aged gold</option></select></div><hr><div class="buttons"><button id="png">Export PNG</button><button id="svg">Export SVG</button></div><p class="small">Exports have transparent backgrounds. Sagging is fixed at generation; intact webs do not fall over time. Sweep the cursor to gather sticky silk. Circle through a web to collapse it; drag to pull harder. Press R to randomize.</p></aside><main><div class="top"><strong>Silk composition</strong><span id="stats">Preparing webs…</span><label class="toggle"><input type="checkbox" id="background" checked> Dark preview</label><label class="toggle"><input type="checkbox" id="physics" checked> Interactive silk</label><label class="toggle"><input type="checkbox" id="anchors" checked> Anchor points</label></div><div id="stage"><canvas id="canvas"></canvas></div><div class="bottom"><span>Large overlapping webs • independent decay • simulated depth</span><span id="fps"></span></div></main>
+<script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),canvas=$('canvas'),ctx=canvas.getContext('2d'),stage=$('stage');let W=1,H=1,dpr=1,nodes=[],edges=[],webs=[],baseSeed=1,frame=0,last=0,raf=0,topologyDirty=true,drag=false,mouse={x:-1000,y:-1000,dx:0,dy:0,active:false};
+const defs=[['layers','Layers',2,7,5,1],['coverage','Coverage',10,100,65,1],['density','Density',10,100,70,1],['structure','Structure / preservation',0,100,55,1],['variation','Organic variation',0,100,60,1],['sag','Initial sagging',0,100,45,1],['clusters','Silk clusters',0,100,65,1],['thickness','Silk thickness',0,100,30,1]];
+const settings={};for(const [id,label,min,max,val,step] of defs){settings[id]=val;const box=document.createElement('div');box.className='control';box.innerHTML=`<label for="${id}">${label}<output id="${id}Value">${id==='layers'?val:val+'%'}</output></label><input type="range" id="${id}" min="${min}" max="${max}" step="${step}" value="${val}">`; $('controls').append(box);$(id).addEventListener('input',()=>{settings[id]=+$(id).value;$(id+'Value').textContent=id==='layers'?settings[id]:settings[id]+'%';generate()})}
+function hash(s){let h=2166136261;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)}return h>>>0}function rng(seed){let x=seed>>>0;return()=>{x+=0x6D2B79F5;let t=x;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}const clamp=(x,a,b)=>Math.max(a,Math.min(b,x)),mix=(a,b,t)=>a+(b-a)*t;
+function addNode(x,y,pin=false,z=0){nodes.push({x,y,px:x,py:y,restX:x,restY:y,pin,z,grab:0,loose:false});return nodes.length-1}
+function addEdge(a,b,kind,z,rr,integrity=1,thick=1,curve=0){if(a===b)return;const A=nodes[a],B=nodes[b];edges.push({a,b,kind,z,rest:Math.hypot(A.x-B.x,A.y-B.y),integrity,thick,curve,phase:rr()*6.28,broken:false,shimmer:.8+rr()*.4})}
+// Original v0.8 large-scale layout, with deterministic jitter. Never divide the canvas into narrow columns.
+const templates=[[.08,.15,.63],[.92,.18,.62],[.12,.86,.52],[.89,.84,.55],[.50,.13,.53],[.06,.50,.50],[.94,.52,.52],[.50,.84,.48],[.50,.50,.45]];
+function generate(){const rr=rng(hash($('seed').value||'0'));baseSeed=hash($('seed').value||'0');nodes=[];edges=[];webs=[];disturbed.clear();carried.clear();topologyDirty=true;const r=Math.min(W,H),v=settings.variation/100,p=settings.structure/100,d=settings.density/100,cover=settings.coverage/100,sag=settings.sag/100;
+const count=settings.layers;const order=[0,1,2,3,4,5,6,7,8];
+for(let k=0;k<count;k++){
+ const start=edges.length; // Track this web’s edges for independent deterioration.
+ const [tx,ty,tr]=templates[order[k]];const z=count===1?.5:(k/(count-1));const size=tr*r*mix(.43,1.20,cover)*(1+(rr()-.5)*.35*v);const cx=tx*W+(rr()-.5)*r*.12*v,cy=Math.max(size*.52+8,ty*H+(rr()-.5)*r*.12*v);const arms=Math.round(mix(15,32,d)*(1+(rr()-.5)*.23*v));const rings=Math.round(mix(7,18,d));const phase=rr()*6.283;const squash=mix(.86,.58,v*rr()); // Each web has its own construction profile: capture silk may be concentrated
+ // near the hub, near the perimeter, or in broad irregular bands.
+ const profile=Math.floor(rr()*3),profilePhase=rr()*6.283;
+ const sectorPhase=rr()*6.283,sectorPhase2=rr()*6.283;
+ const sectorFreq=1+Math.floor(rr()*3),sectorFreq2=2+Math.floor(rr()*3);
+ const densityBias=(t)=>profile===0?Math.pow(t,.68):profile===1?Math.pow(t,1.55):t;
+ // One monotonically increasing spacing sequence, shared by all spokes.
+ // This prevents unrelated missing rings or discontinuous radial rows.
+ const weights=[];for(let j=0;j<rings;j++){
+  const t=(j+.5)/rings;
+  const radial=profile===0?.48+1.5*t:profile===1?1.98-1.45*t:1+.40*Math.sin(t*10+profilePhase);
+  weights.push(Math.max(.22,radial*(1+v*.28*Math.sin(t*13+profilePhase))));
+ }
+ const sum=weights.reduce((a,b)=>a+b,0);let acc=0;
+ const turns=[];for(let j=0;j<rings;j++){acc+=weights[j]/sum;turns.push(acc)}
+ // A naturally open zone between the compact hub and the capture spiral.
+ const hubGap=mix(.035,.11,v*rr());
+ const hub=addNode(cx,cy,false,z);const spokes=[],outer=[];
+ const armAngles=Array.from({length:arms},(_,i)=>phase+i*2*Math.PI/arms+(rr()-.5)*v*.075);
+ const armReach=Array.from({length:arms},()=>mix(.86,1.13,rr()));
+ const sectorStretch=angle=>1+v*(.18*Math.sin(sectorFreq*angle+sectorPhase)+.10*Math.sin(sectorFreq2*angle+sectorPhase2));
+ for(let i=0;i<arms;i++){
+  const angle=armAngles[i],reach=armReach[i];let prev=hub;const chain=[];
+  for(let j=0;j<rings;j++){
+   const t=hubGap+(1-hubGap)*turns[j];
+   const theta=angle+v*.045*Math.sin(t*3+i*.35);
+   const localSpacing=1+v*.075*Math.sin(t*8+angle*sectorFreq+sectorPhase);
+   const radius=size*t*reach*sectorStretch(angle)*localSpacing;
+   const x=cx+Math.cos(theta)*radius,y=cy+Math.sin(theta)*radius*squash+sag*size*.065*t*t;
+   const id=addNode(x,y,false,z);chain.push(id);
+   addEdge(prev,id,'radial',z,rr,rr(),.85+rr()*.4);prev=id;
+  }spokes.push(chain);outer.push(chain[chain.length-1]);
+ }
+ // Independent physical supports: 2–5 points per web, biased toward
+ // nearby ceiling / wall edges. The frame anchors remain fixed; the silk
+ // tether connecting each anchor to the web is fragile and can release.
+ const supportCount=$('anchors').checked?3+Math.floor(rr()*3):0;
+ const candidate=[];
+ for(let i=0;i<arms;i++){
+  const q=nodes[outer[i]],choices=[
+   {x:clamp(q.x+(rr()-.5)*W*.12,-12,W+12),y:-9,dist:Math.abs(q.y+9),side:'top'},
+   {x:W+9,y:clamp(q.y+(rr()-.5)*H*.12,-12,H+12),dist:Math.abs(W+9-q.x),side:'right'},
+   {x:-9,y:clamp(q.y+(rr()-.5)*H*.12,-12,H+12),dist:Math.abs(q.x+9),side:'left'},
+   {x:clamp(q.x+(rr()-.5)*W*.12,-12,W+12),y:H+9,dist:Math.abs(H+9-q.y),side:'bottom'}];
+  choices.sort((a,b)=>a.dist-b.dist);
+  for(const c of choices.slice(0,2))candidate.push({...c,outer:outer[i],arm:i,score:c.dist+(c.side==='bottom'?H*.42:0)});
+ }
+ candidate.sort((a,b)=>a.score-b.score);
+ const picked=[],usedArms=new Set(),usedSides=new Map();
+ for(const c of candidate){
+  if(picked.length>=supportCount)break;
+  if(usedArms.has(c.arm))continue;
+  if(picked.some(v=>Math.abs(v.arm-c.arm)<Math.max(2,Math.floor(arms/7))||Math.abs(v.arm-c.arm)>arms-Math.max(2,Math.floor(arms/7))))continue;
+  if((usedSides.get(c.side)||0)>=3)continue;
+  picked.push(c);usedArms.add(c.arm);usedSides.set(c.side,(usedSides.get(c.side)||0)+1);
+ }
+ // Interior webs use longer tethers to the scene boundary rather than floating supports.
+ const supportEdges=[];
+ for(const c of picked){
+  const pin=addNode(c.x,c.y,true,z);
+  nodes[pin].web=k;nodes[c.outer].web=k;
+  addEdge(c.outer,pin,'support',z,rr,1,.55);
+  const e=edges[edges.length-1];e.web=k;e.anchor=true;e.breakLimit=1.23+rr()*.26;e.fatigue=0;
+  supportEdges.push(edges.length-1);
+ }
+ for(let ni=0;ni<nodes.length;ni++)if(nodes[ni].web===undefined&&nodes[ni].z===z)nodes[ni].web=k;
+ // Capture silk is woven as connected turns. Spacing changes continuously
+ // around the web; a sparse sector widens its cells rather than deleting edges.
+ for(let j=0;j<rings-1;j++)for(let i=0;i<arms;i++){
+  const a=spokes[i][j],b=spokes[(i+1)%arms][j];
+  const angle=armAngles[i],t=turns[j];
+  const sector=.5+.5*Math.sin(angle*sectorFreq+sectorPhase);
+  const clustered=.5+.5*Math.sin(angle*sectorFreq2+sectorPhase2+t*7);
+  const localDensity=(1-v)+v*(.52+.48*sector)*(.75+.25*clustered);
+  const curve=(.08+.22*sag)*(1+.3*v*Math.sin(angle*2+t*8));
+  addEdge(a,b,'capture',z,rr,rr(),(.5+rr()*.35)*localDensity,curve);
+ }
+ // Fine secondary filaments in coherent neighboring patches, never duplicate
+ // edges drawn directly on top of each other or isolated random missing strands.
+ const patches=Math.round(settings.clusters/100*mix(1,5,d));
+ for(let c=0;c<patches;c++){
+  const ai=Math.floor(rr()*arms),j0=1+Math.floor(rr()*Math.max(1,rings-4));
+  const span=2+Math.floor(rr()*4),height=1+Math.floor(rr()*3);
+  for(let ii=0;ii<span;ii++)for(let jj=0;jj<height;jj++){
+   const i=(ai+ii)%arms,j=Math.min(rings-2,j0+jj);
+   if(rr()>.28+.55*d)continue;
+   const a=spokes[i][j],b=spokes[(i+1)%arms][j+1];
+   addEdge(a,b,'fine',z,rr,rr(),.22+rr()*.20,.06+.08*sag);
+  }
+ }
+ // Deterministic deterioration. Broken silk stays attached as dangling fragments.
+ const decay=1-p;for(let ei=start;ei<edges.length;ei++){const e=edges[ei];if(e.kind==='support')continue;const resilience=e.kind==='radial'?.88:e.kind==='cluster'?.62:e.kind==='capture'?.50:.4;const A=nodes[e.a],B=nodes[e.b],ang=Math.atan2((A.y+B.y)/2-cy,(A.x+B.x)/2-cx);const patch=.5+.5*Math.sin(ang*2.4+sectorPhase+Math.hypot(A.x-cx,A.y-cy)/Math.max(size,1)*5);const threshold=decay*(1.0-resilience*.68)*(.45+.85*patch);if(e.integrity<threshold){if(e.kind==='radial'&&rr()<.48)continue;breakSilk(e,rr)}}
+ for(let ei=start;ei<edges.length;ei++)edges[ei].web=k;
+ webs.push({cx,cy,size,z,arms,rings,supportEdges,grabbed:new Set(),activated:false,swipeLoad:0});
+}
+ // Pre-existing deterioration is a static resting configuration, not an impact.
+ // No generated web moves or tears until the cursor actually touches it.
+ disturbed.clear();carried.clear();
+ for(const n of nodes){n.disturbed=false;n.stick=0;n.grab=0;n.px=n.x;n.py=n.y;}
+ topologyDirty=true;
+ $('stats').textContent=`${webs.length} webs · ${edges.filter(e=>!e.broken).length.toLocaleString()} strands`;draw();}
+function lightAt(x,y,z){const mode=$('light').value;if(mode==='none')return 1;const ang=+$('lightDirection').value*Math.PI/180,ux=Math.cos(ang),uy=Math.sin(ang);const nx=x/W-.5,ny=y/H-.5;const across=Math.abs(nx*(-uy)+ny*ux),along=nx*ux+ny*uy;const beam=clamp(1-across*1.35,0,1)*(.7+.3*clamp(1-along,0,1));return clamp(.14+beam*(+$('lightIntensity').value/100)*mix(.65,1.2,z),0,1)}
+function color(){return $('silk').value==='gold'?[236,201,148]:$('silk').value==='white'?[237,240,245]:[195,218,244]}
+function paint(target,exporting=false){const [cr,cg,cb]=color();target.clearRect(0,0,W,H);if(!exporting&&$('background').checked){target.fillStyle='#070d18';target.fillRect(0,0,W,H)}const order=edges.filter(e=>!e.broken).sort((a,b)=>a.z-b.z);for(const e of order){const a=nodes[e.a],b=nodes[e.b];const len=Math.hypot(a.x-b.x,a.y-b.y);if(len<.3)continue;const depth=mix(.25,1,e.z),l0=lightAt(a.x,a.y,e.z),l1=lightAt(b.x,b.y,e.z);const alpha0=clamp((.045+.55*l0)*depth*e.shimmer,0,.78),alpha1=clamp((.045+.55*l1)*depth*e.shimmer,0,.78);const grad=target.createLinearGradient(a.x,a.y,b.x+.001,b.y+.001);grad.addColorStop(0,`rgba(${cr},${cg},${cb},${alpha0})`);grad.addColorStop(1,`rgba(${cr},${cg},${cb},${alpha1})`);target.strokeStyle=grad;target.lineWidth=(e.kind==='support'?.65:e.kind==='radial'?.72:e.kind==='cluster'?.28:.48)*e.thick*mix(.7,1.35,e.z)*mix(.45,1.6,settings.thickness/100);target.lineCap='round';target.beginPath();target.moveTo(a.x,a.y);if(e.curve){const mx=(a.x+b.x)/2,my=(a.y+b.y)/2;target.quadraticCurveTo(mx,my+Math.min(45,len*.5*e.curve),b.x,b.y)}else target.lineTo(b.x,b.y);target.stroke()}if(!exporting&&$('anchors').checked){for(const e of edges){if(e.kind!=='support'||e.broken)continue;const a=nodes[e.a],b=nodes[e.b],n=a.pin?a:b.pin?b:null;if(!n)continue;target.beginPath();target.arc(n.x,n.y,3.1,0,Math.PI*2);target.fillStyle='rgba(244,196,119,.8)';target.fill();target.strokeStyle='rgba(244,196,119,.3)';target.lineWidth=1;target.beginPath();target.arc(n.x,n.y,6,0,Math.PI*2);target.stroke()}}}
+function draw(){paint(ctx)}
+// v0.4.4: persistent, low-resistance silk physics. The generated web remains
+// stationary until disturbed; damage changes its resting geometry permanently.
+let disturbed=new Set(),physicsTick=0;
+function pointSegmentDistance(px,py,ax,ay,bx,by){
+ const dx=bx-ax,dy=by-ay,t=clamp(((px-ax)*dx+(py-ay)*dy)/(dx*dx+dy*dy||1),0,1);
+ return Math.hypot(px-(ax+dx*t),py-(ay+dy*t));
+}
+let carried=new Set(),lastMoveTime=0;
+function move(x,y,pressed=false){
+ const ox=mouse.x,oy=mouse.y,dx=clamp(x-ox,-110,110),dy=clamp(y-oy,-110,110);
+ const speed=Math.hypot(dx,dy);mouse={x,y,dx,dy,active:true};
+ if(!$('physics').checked||Math.hypot(x-ox,y-oy)>220)return;
+ const radius=pressed?76:60;
+ // Silk caught by the hand remains attached to the moving collection point.
+ // This lets circular gestures sweep the whole sheet into a bundle.
+ const next=new Set();
+ for(let i=0;i<nodes.length;i++){
+  const n=nodes[i];if(n.pin)continue;
+  const d=pointSegmentDistance(n.x,n.y,ox,oy,x,y);
+  const was=carried.has(i),near=d<radius;
+  if(!near&&!was)continue;
+  const influence=near?Math.pow(1-d/radius,.8):.10;
+  if(near&&influence>.12){if(webs[n.web])webs[n.web].activated=true;n.stick=Math.min(1,(n.stick||0)+.3+influence*.55);n.disturbed=true;disturbed.add(i)}
+  if(!n.stick)continue;
+  const grip=clamp(n.stick,0,1);
+  const pull=was?.48:.38;
+  n.x+=dx*pull*grip;n.y+=dy*pull*grip;
+  n.px=n.x-dx*.06;n.py=n.y-dy*.06;
+  n.grab=grip;
+  // Keep silk for multiple movements, even when it is no longer near
+  // the cursor, until its tension or the end of the gesture releases it.
+  if(near&&grip>.18||was&&d<radius*1.65&&grip>.35)next.add(i);
+ }
+ carried=next;
+ // The cursor can tear structural silk, especially at the perimeter.
+ // Tension at supports is handled separately by the solver.
+ if(speed>9){
+  for(const e of edges){
+   if(e.broken||e.kind==='fragment')continue;
+   const a=nodes[e.a],b=nodes[e.b];
+   const d=Math.min(pointSegmentDistance(a.x,a.y,ox,oy,x,y),pointSegmentDistance(b.x,b.y,ox,oy,x,y),pointSegmentDistance((a.x+b.x)/2,(a.y+b.y)/2,ox,oy,x,y));
+   if(d>(e.kind==='support'?17:8))continue;
+   const likelihood=clamp((speed-13)/85,0,.65)*(e.kind==='support'?.16:e.kind==='radial'?.22:.40);
+   if(Math.random()<likelihood)breakSilk(e);
+  }
+ }
+ // A broad sweep puts load on all support points of touched webs.
+ // Attachment failure can cascade even without directly crossing an anchor.
+ const touched=new Set();for(const i of carried)if(nodes[i].web!==undefined)touched.add(nodes[i].web);
+ for(const wi of touched){const w=webs[wi];if(!w)continue;w.activated=true;w.swipeLoad=Math.min(2,(w.swipeLoad||0)+speed*(pressed?.0007:.0004));}
+}
+function breakSilk(e,rr=Math.random){
+ if(e.broken)return;
+ e.broken=true;topologyDirty=true;
+ const a=nodes[e.a],b=nodes[e.b];
+ a.disturbed=true;b.disturbed=true;disturbed.add(e.a);disturbed.add(e.b);
+ if(e.kind==='fragment'||e.kind==='support'||e.rest<8||rr()>.46)return;
+ // Short broken fibers stay tethered to the surviving sheet.
+ const source=rr()<.5?e.a:e.b,other=source===e.a?e.b:e.a;
+ const A=nodes[source],B=nodes[other],t=.23+rr()*.30;
+ const tip=addNode(mix(A.x,B.x,t),mix(A.y,B.y,t)+2,false,e.z);
+ nodes[tip].web=A.web;nodes[tip].loose=true;nodes[tip].disturbed=true;disturbed.add(tip);
+ addEdge(source,tip,'fragment',e.z,rr,1,.22,0);
+}
+function updateConnectivity(){
+ const adj=Array.from({length:nodes.length},()=>[]);
+ for(const e of edges)if(!e.broken){adj[e.a].push(e.b);adj[e.b].push(e.a)}
+ const visited=new Uint8Array(nodes.length);
+ for(let i=0;i<nodes.length;i++){
+  if(visited[i])continue;
+  const component=[],queue=[i];visited[i]=1;let supports=0;
+  for(let q=0;q<queue.length;q++){
+   const id=queue[q],n=nodes[id];component.push(id);
+   if(n.pin)supports++;
+   for(const j of adj[id])if(!visited[j]){visited[j]=1;queue.push(j)}
+  }
+  for(const id of component){const n=nodes[id];n.attached=supports>0;n.supportCount=supports;n.degree=adj[id].length;n.hanging=!n.pin&&(supports<=1||n.degree<=1&&n.disturbed)}
+ }
+ topologyDirty=false;
+}
+function simulate(){
+ physicsTick++;
+ if(topologyDirty)updateConnectivity();
+ // Hand collection: caught nodes stick together, and adjacent web nodes
+ // are recruited by silk tension and proximity rather than simply pushed.
+ const gathered=new Map();
+ for(const id of carried){const n=nodes[id];if(!n||n.pin)continue;const wi=n.web;if(!gathered.has(wi))gathered.set(wi,[]);gathered.get(wi).push(id)}
+ for(const [wi,ids] of gathered){
+  const group=ids.slice(0,240);let cx=0,cy=0;
+  for(const i of group){cx+=nodes[i].x;cy+=nodes[i].y}cx/=group.length;cy/=group.length;
+  // Gather toward a soft area rather than collapsing every strand into one point.
+  // An inner radius keeps the bundle broad, while outer silk folds inward.
+  const bundleRadius=18+Math.min(32,Math.sqrt(group.length)*1.5);
+  for(const i of group){const n=nodes[i],dx=cx-n.x,dy=cy-n.y,dist=Math.hypot(dx,dy);if(dist>bundleRadius){const amount=(dist-bundleRadius)/Math.max(dist,1)*.045;n.x+=dx*amount;n.y+=dy*amount}n.disturbed=true;disturbed.add(i)}
+  const w=webs[wi];if(w)w.swipeLoad=Math.min(2,(w.swipeLoad||0)+group.length*.00008);
+ }
+ // Nearby displaced silk sticks to other displaced silk of the same web.
+ if(physicsTick%2===0){
+  const bins=new Map(),cell=32;
+  for(const id of disturbed){const n=nodes[id];if(!n||n.pin)continue;
+   const key=`${n.web}:${Math.floor(n.x/cell)},${Math.floor(n.y/cell)}`;
+   if(!bins.has(key))bins.set(key,[]);bins.get(key).push(id);
+  }
+  for(const ids of bins.values())if(ids.length>1){
+   const group=ids.slice(0,32);let x=0,y=0;for(const id of group){x+=nodes[id].x;y+=nodes[id].y}x/=group.length;y/=group.length;
+   for(const id of group){const n=nodes[id],dx=x-n.x,dy=y-n.y,dist=Math.hypot(dx,dy);if(dist>13){const amount=(dist-13)/dist*.018;n.x+=dx*amount;n.y+=dy*amount}}
+  }
+ }
+ // Light, spatially coherent air movement begins only after a web is disturbed.
+ // The sheet drifts as a unit with smaller ripples along loose silk; no
+ // spontaneous motion or accumulated force while the scene is untouched.
+ const windTime=physicsTick/60;
+ const breezes=webs.map((w,i)=>{
+  const phase=i*2.399+((baseSeed>>>((i%4)*8))&255)*.021;
+  const gust=Math.sin(windTime*.74+phase)*.64+Math.sin(windTime*1.27+phase*1.7)*.24;
+  return gust;
+ });
+ // Apply gravity to detached sheets and to sections suspended by one support.
+ for(let i=0;i<nodes.length;i++){
+  const n=nodes[i];if(n.pin||!webs[n.web]?.activated)continue;
+  if(!n.disturbed&&n.attached&&n.supportCount>1)continue;
+  const vx=clamp((n.x-n.px)*.68,-12,12),vy=clamp((n.y-n.py)*.68,-12,12);
+  n.px=n.x;n.py=n.y;n.x+=vx;n.y+=vy;
+  // Air drag is strongest for unsupported, lightweight silk. Multiple
+  // attachments damp motion; one attachment creates a swinging pendulum.
+  const breeze=breezes[n.web]||0;
+  const freedom=!n.attached?1:n.supportCount<=1?.56:n.hanging?.16:.035;
+  const wave=Math.sin(windTime*1.8+n.restY*.014+n.restX*.006)*.20;
+  n.x+=(breeze+wave)*freedom*.24;
+  // Small fold-and-swing movement, strongest in loose sections.
+  if(n.hanging||!n.attached){
+   n.x+=Math.sin(windTime*.95+n.restX*.009+n.web)*freedom*.10;
+  }
+  if(!n.attached)n.y+=$('anchors').checked?.16:.025;
+  else if(n.supportCount<=1)n.y+=.09;
+  else if(n.hanging)n.y+=.035;
+  n.stick=Math.max(0,(n.stick||0)-(carried.has(i)?0:.012));
+ }
+ // One-way silk constraints: silk can collapse, but only gently resists
+ // stretching. A remaining tether becomes a pivot for the falling sheet.
+ for(let pass=0;pass<5;pass++)for(const e of edges){
+  if(e.broken)continue;
+  const a=nodes[e.a],b=nodes[e.b];
+  if(!webs[e.web]?.activated)continue;
+  if(!(a.disturbed||b.disturbed||!a.attached||!b.attached||a.hanging||b.hanging))continue;
+  const dx=b.x-a.x,dy=b.y-a.y,len=Math.hypot(dx,dy)||.001;
+  if(e.kind==='support'){
+   const w=webs[e.web],load=w?.swipeLoad||0;
+   if((a.disturbed||b.disturbed)&&len>e.rest*1.24+7&&len>e.rest+12||load>1.75&&len>e.rest*1.12+9){breakSilk(e);if(w)w.swipeLoad=Math.max(0,load-1.4);continue}
+  }else if(len>e.rest*1.28+5&&len>e.rest+7){breakSilk(e);continue}
+  // Rest lengths never grow indefinitely: silk tears rather than becoming rubber bands.
+  const excess=Math.max(0,len-e.rest);if(!excess)continue;
+  const strength=e.kind==='support'?.48:.40,f=excess/len*strength;
+  if(!a.pin){a.x+=dx*f;a.y+=dy*f}
+  if(!b.pin){b.x-=dx*f;b.y-=dy*f}
+ }
+ for(const w of webs)w.swipeLoad=Math.max(0,(w.swipeLoad||0)-.065);
+ if(topologyDirty||physicsTick%8===0)updateConnectivity();
+}
+function tick(t){if(t-last>15){if($('physics').checked)simulate();draw();last=t}raf=requestAnimationFrame(tick)}
+function resize(){const rect=stage.getBoundingClientRect();W=Math.max(100,rect.width);H=Math.max(100,rect.height);dpr=Math.min(devicePixelRatio||1,1.5);canvas.width=Math.round(W*dpr);canvas.height=Math.round(H*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);generate()}
+function randomize(){const r=rng((Math.random()*4294967296)>>>0);$('seed').value=Math.floor(r()*0xffffffff).toString(36).toUpperCase();for(const [id,,min,max] of defs){let val=Math.round(min+r()*(max-min));if(id==='layers')val=2+Math.floor(r()*6);settings[id]=val;$(id).value=val;$(id+'Value').textContent=id==='layers'?val:val+'%'}$('light').value=['moon','warm','studio','none'][Math.floor(r()*4)];$('lightDirection').value=Math.round(r()*360);$('lightIntensity').value=Math.round(25+r()*75);$('silk').value=['blue','white','gold'][Math.floor(r()*3)];updateLight();generate()}
+function updateLight(){for(const id of ['lightDirection','lightIntensity'])$(id+'Value').textContent=$(id).value+(id==='lightDirection'?'°':'%');draw()}
+function download(name,content,type){const blob=content instanceof Blob?content:new Blob([content],{type});const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1000)}
+function exportPNG(){const c=document.createElement('canvas');c.width=Math.round(W*2);c.height=Math.round(H*2);const x=c.getContext('2d');x.scale(2,2);paint(x,true);c.toBlob(blob=>{if(blob)download('cobb-web-'+$('seed').value+'.png',blob,'image/png')},'image/png')}
+function exportSVG(){const [cr,cg,cb]=color();const paths=edges.filter(e=>!e.broken).map(e=>{const a=nodes[e.a],b=nodes[e.b],len=Math.hypot(a.x-b.x,a.y-b.y);const alpha=clamp((.045+.55*(lightAt(a.x,a.y,e.z)+lightAt(b.x,b.y,e.z))/2)*mix(.25,1,e.z)*e.shimmer,0,.78).toFixed(3);const width=((e.kind==='radial'?.72:e.kind==='support'?.65:e.kind==='cluster'?.28:.48)*e.thick*mix(.7,1.35,e.z)*mix(.45,1.6,settings.thickness/100)).toFixed(2);const d=e.curve?`M${a.x.toFixed(1)} ${a.y.toFixed(1)} Q${((a.x+b.x)/2).toFixed(1)} ${((a.y+b.y)/2+Math.min(45,len*.5*e.curve)).toFixed(1)} ${b.x.toFixed(1)} ${b.y.toFixed(1)}`:`M${a.x.toFixed(1)} ${a.y.toFixed(1)} L${b.x.toFixed(1)} ${b.y.toFixed(1)}`;return `<path d="${d}" fill="none" stroke="rgb(${cr},${cg},${cb})" stroke-opacity="${alpha}" stroke-width="${width}" stroke-linecap="round"/>`}).join('\n');download('cobb-web-'+$('seed').value+'.svg',`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}">\n${paths}\n</svg>`,'image/svg+xml')}
+function config(){return {seed:$('seed').value,...settings,lighting:{mode:$('light').value,direction:+$('lightDirection').value,intensity:+$('lightIntensity').value,silk:$('silk').value},anchors:$('anchors').checked}}
+$('random').onclick=randomize;$('regenerate').onclick=generate;$('copy').onclick=()=>{const s=JSON.stringify(config(),null,2);navigator.clipboard?.writeText(s).then(()=>{$('copy').textContent='Copied!';setTimeout(()=>$('copy').textContent='Copy config',1100)}).catch(()=>prompt('Copy configuration',s))||prompt('Copy configuration',s)};$('png').onclick=exportPNG;$('svg').onclick=exportSVG;$('seed').addEventListener('change',generate);for(const id of ['light','lightDirection','lightIntensity','silk'])$(id).addEventListener('input',updateLight);$('background').onchange=draw;$('anchors').onchange=generate;$('physics').onchange=()=>{if(!$('physics').checked)generate()};stage.addEventListener('pointermove',e=>{const b=stage.getBoundingClientRect();const x=e.clientX-b.left,y=e.clientY-b.top;if(!mouse.active){mouse.x=x;mouse.y=y;mouse.active=true;return}move(x,y,drag)});stage.addEventListener('pointerdown',e=>{drag=true;stage.setPointerCapture(e.pointerId);const b=stage.getBoundingClientRect();mouse.x=e.clientX-b.left;mouse.y=e.clientY-b.top});stage.addEventListener('pointerup',()=>{drag=false;carried.clear()});stage.addEventListener('pointercancel',()=>{drag=false;carried.clear()});stage.addEventListener('pointerleave',()=>{if(!drag){mouse.active=false;carried.clear()}});document.addEventListener('keydown',e=>{if(e.key.toLowerCase()==='r'&&!['INPUT','SELECT'].includes(document.activeElement.tagName))randomize()});window.addEventListener('resize',resize);resize();raf=requestAnimationFrame(tick);
+window.CobbWebEngine={getGeometry:()=>({nodes,edges,webs}),generate,config,paint,seededRandom:rng};
+})();
+</script></body></html>

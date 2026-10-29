@@ -1,0 +1,233 @@
+:root {
+  color-scheme: dark;
+  --bg: #111923;
+  --panel: #18222d;
+  --line: #aab8c633;
+  --text: #e4e9ee;
+  --muted: #8f9ca8;
+  --accent: #d9c796;
+  --button: #e8e2d4;
+  --button-text: #25333d;
+}
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  width: 320px;
+  background: var(--bg);
+  color: var(--text);
+  font:
+    13px/1.4 system-ui,
+    sans-serif;
+}
+body.page {
+  width: auto;
+  max-width: 440px;
+  margin: 32px auto;
+  padding: 0 16px;
+}
+header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--line);
+}
+header img {
+  width: 28px;
+  height: 28px;
+}
+h1 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 650;
+}
+.host {
+  color: var(--muted);
+  font-size: 12px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 230px;
+}
+section {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--line);
+}
+[hidden] {
+  display: none !important;
+}
+.toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-weight: 600;
+}
+.toggle input {
+  appearance: none;
+  width: 36px;
+  height: 20px;
+  margin: 0;
+  border-radius: 10px;
+  background: #2b3946;
+  position: relative;
+  cursor: pointer;
+  flex: none;
+}
+.toggle input::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: #aeb9c4;
+  transition: transform 0.15s;
+}
+.toggle input:checked {
+  background: var(--accent);
+}
+.toggle input:checked::after {
+  transform: translateX(16px);
+  background: var(--bg);
+}
+.status {
+  margin: 8px 0 0;
+  color: var(--muted);
+  font-size: 12px;
+}
+.field {
+  display: block;
+  margin: 10px 0;
+  color: #b9c3cd;
+}
+.field span {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.field output {
+  color: var(--text);
+  text-transform: none;
+  letter-spacing: 0;
+}
+input[type="range"] {
+  width: 100%;
+  accent-color: var(--accent);
+}
+select {
+  width: 100%;
+  padding: 5px 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+}
+.row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.row .field {
+  margin: 6px 0;
+}
+.check {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 8px 0;
+  font-size: 12px;
+  color: #b9c3cd;
+}
+.check input {
+  accent-color: var(--accent);
+}
+h2 {
+  margin: 0 0 4px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+.section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+.link-button {
+  border: 0;
+  padding: 0;
+  background: none;
+  color: var(--muted);
+  font: inherit;
+  font-size: 11px;
+  cursor: pointer;
+  text-decoration: underline;
+}
+.link-button:hover {
+  color: var(--text);
+}
+.primary {
+  width: 100%;
+  margin-top: 6px;
+  border: 0;
+  border-radius: 8px;
+  padding: 10px 14px;
+  background: var(--button);
+  color: var(--button-text);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+}
+.primary:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 12px 16px;
+}
+footer a {
+  color: var(--text);
+  font-size: 12px;
+  text-decoration: none;
+}
+footer a:hover {
+  text-decoration: underline;
+}
+footer a.secondary {
+  color: var(--muted);
+}
+.unsupported {
+  padding: 16px;
+  color: var(--muted);
+}
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid #f4d495;
+  outline-offset: 2px;
+}
+.site-list {
+  margin: 4px 0 8px;
+  padding: 0;
+  list-style: none;
+}
+.site-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 6px 0;
+  border-top: 1px solid var(--line);
+}

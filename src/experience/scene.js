@@ -6,7 +6,7 @@ import { scatterBugs } from "./bugs.js";
 import { growthForDays } from "../engine/config.js";
 
 export function createScene(options = {}) {
-  const host = document.createElement("cobb-webs-scene");
+  const host = document.createElement("cobwebs-scene");
   const root = host.attachShadow({ mode: "open" });
   root.innerHTML = `<style>${css}</style><section class="room" role="dialog" aria-modal="true" aria-label="Welcome back scene" tabindex="-1"><canvas class="lighting" aria-hidden="true"></canvas><canvas class="dust" aria-hidden="true"></canvas><canvas class="silk" aria-hidden="true"></canvas><button class="switch" aria-label="Turn on the light"><span class="plate"></span><span class="slot"></span><span class="lever"></span></button><span class="hint"></span><div class="bugs" aria-hidden="true"></div><section class="welcome" aria-labelledby="welcome-title" hidden><div class="eyebrow">A little time has passed</div><h2 id="welcome-title">Welcome back.</h2><p></p><button class="enter">Enter site →</button></section><button class="skip">Skip scene · Esc</button><span class="instruction">Brush the silk. Find the light.</span></section>`;
   document.body.append(host);
@@ -29,7 +29,7 @@ export function createScene(options = {}) {
   });
   const atmosphere = new Atmosphere($(".lighting"), $(".dust"), light);
   const engine = new WebEngine($(".silk"), light, {
-    ...growthForDays(options.days, options.detail),
+    ...growthForDays(options.days, options.detail, options.growth),
     ...options.web,
     silk: options.web?.silk ?? "light",
     physics: !reduced && options.web?.physics !== false,
@@ -43,7 +43,7 @@ export function createScene(options = {}) {
     destroyed = false;
   const emit = (name) =>
     host.dispatchEvent(
-      new CustomEvent(`cobbwebs:${name}`, {
+      new CustomEvent(`cobwebs:${name}`, {
         bubbles: true,
         composed: true,
         detail: { days: options.days ?? 127 },

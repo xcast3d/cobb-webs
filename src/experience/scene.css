@@ -1,10 +1,16 @@
+/* !important in :host beats host-page rules, e.g. sites that hide every
+   undefined custom element with :not(:defined) { visibility: hidden }. */
 :host {
   all: initial;
-  position: fixed;
-  inset: 0;
-  z-index: 2147483000;
-  display: block;
-  font: 14px/1.5 var(--cobb-font-family, system-ui, sans-serif);
+  position: fixed !important;
+  inset: 0 !important;
+  z-index: 2147483000 !important;
+  display: block !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+  transform: none !important;
+  pointer-events: auto !important;
+  font: 14px/1.5 var(--cobwebs-font-family, system-ui, sans-serif);
   color: #dae3ef;
   color-scheme: dark;
   isolation: isolate;
@@ -180,40 +186,40 @@ canvas {
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  width: min(var(--cobb-card-width, 420px), calc(100% - 36px));
-  padding: var(--cobb-card-padding, 38px);
-  background: var(--cobb-card-background, #f6f3ec);
-  color: var(--cobb-card-color, #26323b);
-  border: var(--cobb-card-border, 1px solid #fff8);
-  border-radius: var(--cobb-card-radius, 16px);
-  box-shadow: var(--cobb-card-shadow, 0 25px 100px #0007);
-  text-align: var(--cobb-card-align, center);
+  width: min(var(--cobwebs-card-width, 420px), calc(100% - 36px));
+  padding: var(--cobwebs-card-padding, 38px);
+  background: var(--cobwebs-card-background, #f6f3ec);
+  color: var(--cobwebs-card-color, #26323b);
+  border: var(--cobwebs-card-border, 1px solid #fff8);
+  border-radius: var(--cobwebs-card-radius, 16px);
+  box-shadow: var(--cobwebs-card-shadow, 0 25px 100px #0007);
+  text-align: var(--cobwebs-card-align, center);
 }
 .welcome .eyebrow {
-  font-size: var(--cobb-eyebrow-size, 10px);
-  letter-spacing: var(--cobb-eyebrow-spacing, 0.22em);
+  font-size: var(--cobwebs-eyebrow-size, 10px);
+  letter-spacing: var(--cobwebs-eyebrow-spacing, 0.22em);
   text-transform: uppercase;
-  color: var(--cobb-eyebrow-color, #7c837d);
+  color: var(--cobwebs-eyebrow-color, #7c837d);
 }
 .welcome h2 {
-  font-size: var(--cobb-title-size, 36px);
-  letter-spacing: var(--cobb-title-spacing, -0.055em);
-  font-weight: var(--cobb-title-weight, bold);
+  font-size: var(--cobwebs-title-size, 36px);
+  letter-spacing: var(--cobwebs-title-spacing, -0.055em);
+  font-weight: var(--cobwebs-title-weight, bold);
   margin: 14px 0 10px;
   line-height: 1.2;
 }
 .welcome p {
-  color: var(--cobb-sentence-color, #65717b);
-  font-size: var(--cobb-sentence-size, inherit);
+  color: var(--cobwebs-sentence-color, #65717b);
+  font-size: var(--cobwebs-sentence-size, inherit);
   margin: 0 0 25px;
 }
 .welcome button {
-  border: var(--cobb-button-border, 0);
-  border-radius: var(--cobb-button-radius, 8px);
-  padding: var(--cobb-button-padding, 12px 25px);
-  color: var(--cobb-button-color, #f7f5ed);
-  background: var(--cobb-button-background, #283e46);
-  font-weight: var(--cobb-button-weight, normal);
+  border: var(--cobwebs-button-border, 0);
+  border-radius: var(--cobwebs-button-radius, 8px);
+  padding: var(--cobwebs-button-padding, 12px 25px);
+  color: var(--cobwebs-button-color, #f7f5ed);
+  background: var(--cobwebs-button-background, #283e46);
+  font-weight: var(--cobwebs-button-weight, normal);
 }
 .skip {
   position: absolute;

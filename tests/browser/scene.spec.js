@@ -3,7 +3,7 @@ test("demo controls, brush physics, welcome and cleanup", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(1);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(1);
   await page.screenshot({ path: "test-results/desktop-scene.png" });
   await page.getByRole("button", { name: "Tune the scene" }).click();
   await page.locator("#density").fill("80");
@@ -19,11 +19,11 @@ test("demo controls, brush physics, welcome and cleanup", async ({ page }) => {
   ).toBeVisible();
   await page.screenshot({ path: "test-results/welcome.png" });
   await page.getByRole("button", { name: "Enter site" }).click();
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   await page.getByRole("button", { name: "Replay" }).click();
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(1);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(1);
   await page.keyboard.press("Escape");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
 test("installation modal copies instructions and downloads the embed", async ({
@@ -33,21 +33,57 @@ test("installation modal copies instructions and downloads the embed", async ({
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Add it to your site" }).click();
   const dialog = page.getByRole("dialog", {
-    name: "Add Cobb Webs to your site.",
+    name: "Add Cobwebs to your site.",
   });
   await expect(dialog).toBeVisible();
-  await expect(dialog.locator("#embed-code")).toContainText("data-cobb-webs");
+  await expect(dialog.locator("#embed-code")).toContainText("data-cobwebs");
   await expect(dialog.locator("#embed-code")).toContainText(
-    "https://example.com/assets/cobb-webs.min.js",
+    "https://example.com/assets/cobwebs.min.js",
   );
   await expect(dialog.locator("#embed-code")).toContainText(
-    'data-cobbwebsbug="true"',
+    'data-cobwebs-bug="true"',
+  );
+  await expect(page.locator("#download-embed")).toHaveAttribute(
+    "href",
+    /cobwebs\.min\.js\?v=[a-z0-9]+$/,
   );
   const download = page.waitForEvent("download");
   await page.getByRole("link", { name: "Download JavaScript" }).click();
-  expect((await download).suggestedFilename()).toBe("cobb-webs.min.js");
+  expect((await download).suggestedFilename()).toBe("cobwebs.min.js");
   await page.getByRole("button", { name: "Done" }).click();
   await expect(dialog).not.toBeVisible();
+});
+test("extension modal explains manual install and downloads the zip", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Chrome extension" }).click();
+  const dialog = page.getByRole("dialog", {
+    name: "Cobwebs for your browser.",
+  });
+  await expect(dialog).toBeVisible();
+  await expect(dialog).toContainText("Load unpacked");
+  await expect(page.locator("#download-extension")).toHaveAttribute(
+    "href",
+    /cobwebs-extension\.zip\?v=[a-z0-9]+$/,
+  );
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(dialog).not.toBeVisible();
+});
+test("studio bar fits or collapses into the menu at every width", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.keyboard.press("Escape");
+  for (const width of [1440, 1180, 1121, 1120, 980, 700, 390]) {
+    await page.setViewportSize({ width, height: 700 });
+    const bar = page.locator(".studio-bar");
+    expect(
+      await bar.evaluate((el) => el.scrollWidth <= el.clientWidth),
+      `bar fits at ${width}px`,
+    ).toBe(true);
+  }
 });
 test("demo credits Xcast3D", async ({ page }) => {
   await page.goto("/");
@@ -63,13 +99,13 @@ test("standalone API isolates host CSS and disposes listeners/timers", async ({
 }) => {
   await page.goto("/");
   await page.keyboard.press("Escape");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   const result = await page.evaluate(async () => {
     const { show } = await import("/src/index.js");
     const before = document.querySelector(".site").outerHTML;
     const style = document.createElement("style");
     style.textContent =
-      "button{background:red!important;font-size:80px!important}canvas{display:none!important}cobb-webs-scene{--cobb-card-background:rgb(1, 2, 3);--cobb-card-radius:24px;--cobb-button-background:rgb(4, 5, 6)}";
+      "button{background:red!important;font-size:80px!important}canvas{display:none!important}cobwebs-scene{--cobwebs-card-background:rgb(1, 2, 3);--cobwebs-card-radius:24px;--cobwebs-button-background:rgb(4, 5, 6)}";
     document.head.append(style);
     const trigger = document.querySelector("#replay");
     trigger.focus();
@@ -94,7 +130,7 @@ test("standalone API isolates host CSS and disposes listeners/timers", async ({
       themeValues,
       hostUnchanged: before === document.querySelector(".site").outerHTML,
       focus: document.activeElement === trigger,
-      count: document.querySelectorAll("cobb-webs-scene").length,
+      count: document.querySelectorAll("cobwebs-scene").length,
     };
   });
   expect(result).toEqual({
@@ -109,7 +145,7 @@ test("standalone API isolates host CSS and disposes listeners/timers", async ({
     count: 0,
   });
   await page.waitForTimeout(1000);
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
 });
 test("mobile and reduced motion can enter without animation", async ({
   page,
@@ -122,33 +158,33 @@ test("mobile and reduced motion can enter without animation", async ({
   ).toBeVisible();
   await page.screenshot({ path: "test-results/mobile-reduced.png" });
   await page.getByRole("button", { name: "Enter site" }).click();
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   await expect(page.locator("#studio-actions")).not.toBeVisible();
   await page.getByRole("button", { name: "Open studio menu" }).click();
   await expect(page.locator("#studio-actions")).toBeVisible();
   await expect(
     page.getByRole("link", { name: "View on GitHub" }),
-  ).toHaveAttribute("href", "https://github.com/xcast3d/cobb-webs");
+  ).toHaveAttribute("href", "https://github.com/xcast3d/cobwebs");
 });
 test("built classic embed auto-initializes without demo markup", async ({
   page,
 }) => {
   await page.goto("/");
   await page.keyboard.press("Escape");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   await page.evaluate(() => {
     document.body.innerHTML =
       '<main><button id="host-button">Host site</button></main>';
     const script = document.createElement("script");
-    script.src = "/dist/embed/cobb-webs.min.js";
-    script.dataset.cobbWebs = "";
+    script.src = "/dist/embed/cobwebs.min.js";
+    script.dataset.cobwebs = "";
     script.dataset.test = "true";
     script.dataset.days = "127";
     document.body.append(script);
   });
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(1);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(1);
   await page.getByRole("button", { name: "Skip scene" }).click();
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   await expect(page.locator("#host-button")).toHaveText("Host site");
 });
 
@@ -159,18 +195,21 @@ test("optional web bug tunes, replays, and survives scene dismissal", async ({
   await page.keyboard.press("Escape");
   await page.evaluate(async () => {
     const { show } = await import("/src/index.js");
-    show({ days: 127, bugs: false, cobbwebsbug: true });
+    show({ days: 127, bugs: false, cobwebsBug: true });
   });
-  const bug = page.locator("cobb-webs-bug");
+  const bug = page.locator("cobwebs-bug");
   await expect(bug).toHaveCount(1);
   await page.keyboard.press("Escape");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
-  await page.getByRole("button", { name: "Open Cobb Webs settings" }).click();
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
+  await page.getByRole("button", { name: "Open Cobwebs settings" }).click();
+  await expect(
+    page.getByRole("link", { name: "Add to my site" }),
+  ).toHaveAttribute("href", "https://xcast3d.com/cobwebs/");
   await page.getByRole("slider", { name: "Web density" }).fill("82");
   await page.getByRole("button", { name: "Replay cobwebs" }).click();
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(1);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(1);
   await page.keyboard.press("Escape");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   await expect(bug).toHaveCount(1);
   await page.evaluate(async () => (await import("/src/index.js")).destroy());
   await expect(bug).toHaveCount(0);
@@ -184,15 +223,15 @@ test("first-visit bug preview uses minimum days instead of demo fallback", async
   await page.evaluate(async () => {
     const api = await import("/src/index.js");
     api.destroy();
-    localStorage.removeItem("cobb-webs:last-visit");
-    sessionStorage.removeItem("cobb-webs:last-visit");
-    api.init({ minDays: 1, cobbwebsbug: true, bugs: false });
+    localStorage.removeItem("cobwebs:last-visit");
+    sessionStorage.removeItem("cobwebs:last-visit");
+    api.init({ minDays: 1, cobwebsBug: true, bugs: false });
   });
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
-  await page.getByRole("button", { name: "Open Cobb Webs settings" }).click();
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
+  await page.getByRole("button", { name: "Open Cobwebs settings" }).click();
   await page.getByRole("button", { name: "Replay cobwebs" }).click();
   await page.getByRole("button", { name: "Turn on the light" }).click();
-  await expect(page.locator("cobb-webs-scene .welcome p")).toContainText(
+  await expect(page.locator("cobwebs-scene .welcome p")).toContainText(
     "It's been 1 day since",
   );
 });
@@ -203,11 +242,11 @@ test("always mode bypasses visits and supports custom card labels", async ({
   await page.goto("/");
   await page.keyboard.press("Escape");
   await page.evaluate(() => {
-    localStorage.removeItem("cobb-webs:last-visit");
-    sessionStorage.removeItem("cobb-webs:last-visit");
+    localStorage.removeItem("cobwebs:last-visit");
+    sessionStorage.removeItem("cobwebs:last-visit");
     const script = document.createElement("script");
-    script.src = "/dist/embed/cobb-webs.min.js";
-    script.dataset.cobbWebs = "";
+    script.src = "/dist/embed/cobwebs.min.js";
+    script.dataset.cobwebs = "";
     script.dataset.always = "true";
     script.dataset.eyebrow = "Something has been waiting";
     script.dataset.title = "Welcome in.";
@@ -215,7 +254,7 @@ test("always mode bypasses visits and supports custom card labels", async ({
     script.dataset.bugs = "false";
     document.body.append(script);
   });
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(1);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(1);
   await page.getByRole("button", { name: "Turn on the light" }).click();
   await expect(page.getByText("Something has been waiting")).toBeVisible();
   await expect(
@@ -246,7 +285,7 @@ test("exports and mobile dark scene remain usable after resize", async ({
     page.getByRole("heading", { name: "Welcome back." }),
   ).toBeVisible();
   await page.keyboard.press("Escape");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
 });
 
 test("standalone art tool has no scene and exports custom-sized artwork", async ({
@@ -255,7 +294,7 @@ test("standalone art tool has no scene and exports custom-sized artwork", async 
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/generator.html");
-  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("cobwebs-scene")).toHaveCount(0);
   await expect(
     page.getByRole("heading", { name: "Spin something new." }),
   ).toBeVisible();
@@ -340,7 +379,7 @@ test("replay refreshes web and lighting controls and restores moving light", asy
         ),
     ).toEqual(after[id]);
   const pixels = () =>
-    page.locator("cobb-webs-scene canvas.lighting").evaluate(async (c) => {
+    page.locator("cobwebs-scene canvas.lighting").evaluate(async (c) => {
       const pixels = c
         .getContext("2d")
         .getImageData(0, 0, c.width, c.height).data;

@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <title>Cobwebs</title>
+    <link rel="stylesheet" href="popup.css" />
+    <script type="module" src="popup.js"></script>
+  </head>
+  <body>
+    <header>
+      <img src="icons/48.png" alt="" />
+      <div>
+        <h1>Cobwebs</h1>
+        <div class="host" id="host"></div>
+      </div>
+    </header>
+    <p class="unsupported" id="unsupported" hidden>
+      Cobwebs only runs on regular web pages (http and https).
+    </p>
+    <main id="main" hidden>
+      <section>
+        <label class="toggle">
+          Gather cobwebs on this site
+          <input type="checkbox" id="enabled" />
+        </label>
+        <p class="status" id="status"></p>
+      </section>
+      <section>
+        <div class="section-head">
+          <h2>This site</h2>
+          <button class="link-button" id="reset" hidden>Use defaults</button>
+        </div>
+        <div id="settings"></div>
+      </section>
+      <section>
+        <h2>Replay</h2>
+        <label class="field">
+          <span>Pretend I've been away <output id="days-out"></output></span>
+          <input type="range" id="days" min="1" max="365" />
+        </label>
+        <button class="primary" id="replay">Replay on this page</button>
+      </section>
+    </main>
+    <footer>
+      <a
+        href="https://xcast3d.com/cobwebs/?ref=extension"
+        target="_blank"
+        rel="noopener"
+        >Add Cobwebs to your website ↗</a
+      >
+      <a class="secondary" href="options.html" target="_blank">Defaults</a>
+    </footer>
+  </body>
+</html>

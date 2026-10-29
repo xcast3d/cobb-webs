@@ -183,7 +183,8 @@ select:focus-visible {
   color: #232a2c;
   border-color: #d3c19e;
 }
-.studio-bar #install {
+.studio-bar #install,
+.studio-bar #get-extension {
   border-color: #d3c19e66;
   color: #e5d8bf;
 }
@@ -337,7 +338,8 @@ select:focus-visible {
   margin-top: 10px;
   color: #d4c19e;
 }
-#install-dialog {
+#install-dialog,
+.install-dialog {
   width: min(620px, calc(100vw - 32px));
   padding: 0;
   border: 1px solid #b8ced12e;
@@ -346,7 +348,8 @@ select:focus-visible {
   color: #dce5e8;
   box-shadow: 0 35px 120px #000c;
 }
-#install-dialog::backdrop {
+#install-dialog::backdrop,
+.install-dialog::backdrop {
   background: #081015b8;
   backdrop-filter: blur(8px);
 }
@@ -370,7 +373,8 @@ select:focus-visible {
   letter-spacing: -0.045em;
   font-weight: 540;
 }
-#install-close {
+#install-close,
+.install-close {
   align-self: flex-start;
   border: 0;
   background: transparent;
@@ -446,7 +450,8 @@ select:focus-visible {
   gap: 9px;
   padding: 8px 32px 0;
 }
-#download-embed {
+#download-embed,
+#download-extension {
   padding: 10px 16px;
   border-radius: 7px;
   background: #d3c19e;
@@ -454,6 +459,10 @@ select:focus-visible {
   text-decoration: none;
   font-size: 11px;
   font-weight: 650;
+}
+.install-steps.extension-steps {
+  grid-template-columns: repeat(3, 1fr);
+  margin-bottom: 20px;
 }
 .install-note {
   margin: 22px 0 0;
@@ -466,14 +475,7 @@ select:focus-visible {
 .install-note code {
   color: #aebcc2;
 }
-@media (max-width: 700px) {
-  .xcast-credit {
-    right: auto;
-    left: 50%;
-    width: max-content;
-    transform: translateX(-50%);
-    text-align: center;
-  }
+@media (max-width: 1120px) {
   .studio-bar {
     padding: 12px 14px;
     gap: 7px;
@@ -544,11 +546,21 @@ select:focus-visible {
   #studio-menu[aria-expanded="true"] span:last-child {
     transform: translateY(-5px) rotate(-45deg);
   }
-  .studio-actions #install {
+  .studio-actions #install,
+  .studio-actions #get-extension {
     order: 5;
   }
   .studio-actions #configure span {
     display: none;
+  }
+}
+@media (max-width: 700px) {
+  .xcast-credit {
+    right: auto;
+    left: 50%;
+    width: max-content;
+    transform: translateX(-50%);
+    text-align: center;
   }
   #panel {
     top: 68px;
@@ -569,7 +581,8 @@ select:focus-visible {
     padding-left: 22px;
     padding-right: 22px;
   }
-  .install-steps {
+  .install-steps,
+  .install-steps.extension-steps {
     grid-template-columns: 1fr;
     padding: 0 22px;
   }

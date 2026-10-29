@@ -4,3 +4,4 @@ dist/.vscode/
 test-results/
 playwright-report/
 .DS_Store
+extension/dist/

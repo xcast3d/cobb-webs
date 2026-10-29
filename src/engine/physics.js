@@ -134,13 +134,26 @@ export class SilkPhysics {
     const { nodes, edges, webs } = this.geometry;
     for (const n of nodes) {
       if (n.pin || !webs[n.web]?.activated) continue;
-      const vx = clamp((n.x - n.px) * 0.975, -8, 8),
-        vy = clamp((n.y - n.py) * 0.975, -8, 8);
+      const loose = n.supports <= 1;
+      const damping = loose ? 0.98 : 0.975;
+      const vx = clamp((n.x - n.px) * damping, -8, 8),
+        vy = clamp((n.y - n.py) * damping, -8, 8);
       n.px = n.x;
       n.py = n.y;
-      const wind = Math.sin(this.time * 0.8 + n.web * 2.4) * 5;
+      // A shared breeze carries loose sheets together; a smaller ripple lets
+      // their ends flutter. Supported webs retain their original gentle forces.
+      const phase = n.web * 2.4;
+      const breeze =
+        Math.sin(this.time * 1.65 + phase) * 36 +
+        Math.sin(this.time * 0.65 + phase) * 12;
+      const ripple =
+        Math.sin(this.time * 2.8 + (n.restY ?? n.y) * 0.012 + phase) * 5;
+      const wind = loose
+        ? (breeze + ripple) * (n.supports === 0 ? 1 : 0.65)
+        : Math.sin(this.time * 0.8 + phase) * 5;
       n.x += vx + wind * dt * dt;
-      n.y += vy + (n.supports === 0 ? 95 : n.supports === 1 ? 55 : 9) * dt * dt;
+      n.y +=
+        vy + (n.supports === 0 ? 160 : n.supports === 1 ? 85 : 9) * dt * dt;
     }
     // Cursor attraction is applied per simulation step, independent of event frequency.
     if (this.pointer)

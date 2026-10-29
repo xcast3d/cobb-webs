@@ -12,7 +12,7 @@ export const controls = [
 export function normalizeConfig(input = {}) {
   const config = {
     seed: String(input.seed ?? "COBB-0804"),
-    silk: ["silver", "white", "gold"].includes(input.silk)
+    silk: ["light", "silver", "white", "gold"].includes(input.silk)
       ? input.silk
       : "silver",
     physics: input.physics !== false,

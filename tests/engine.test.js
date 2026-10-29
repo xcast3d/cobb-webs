@@ -116,3 +116,54 @@ test("visit policy skips first visits and repeats, and tolerates blocked storage
     true,
   );
 });
+
+test("silk follows local light temperature without washing it toward white", async () => {
+  const { SilkRenderer } = await import("../src/engine/renderer.js");
+  const light = new LightField({
+    motion: false,
+    fill: 0,
+    position: 50,
+    direction: 50,
+    intensity: 100,
+  });
+  const renderer = new SilkRenderer({ getContext: () => ({}) }, light);
+  const a = { x: 620, y: 180 },
+    b = { x: 660, y: 180 },
+    e = { z: 1, shimmer: 1, kind: "capture", thick: 1, rest: 40 };
+  const colors = [];
+  for (const warmth of [0, 50, 100]) {
+    light.configure({ warmth });
+    light.update(0);
+    const sampled = light.sample(640, 180);
+    const style = renderer.style(e, a, b, { silk: "light", thickness: 50 });
+    assert.deepEqual(
+      style.rgb,
+      [sampled.r, sampled.g, sampled.b].map(Math.round),
+    );
+    colors.push(style.rgb);
+  }
+  assert.ok(colors[0][2] > colors[0][0] * 2);
+  assert.ok(Math.abs(colors[1][0] - colors[1][2]) < 20);
+  assert.ok(colors[2][0] > colors[2][2] * 4);
+});
+
+test("loose silk falls promptly and sways without moving pinned anchors", () => {
+  const g = {
+    nodes: [
+      { x: 0, y: 0, px: 0, py: 0, pin: false, web: 0, restY: 0 },
+      { x: 10, y: 0, px: 10, py: 0, pin: true, web: 0 },
+    ],
+    edges: [],
+    webs: [{ activated: true }],
+  };
+  const p = new SilkPhysics(g),
+    xs = [];
+  for (let i = 0; i < 360; i++) {
+    p.step(1 / 120);
+    xs.push(g.nodes[0].x);
+  }
+  assert.ok(g.nodes[0].y > 140 && g.nodes[0].y < 200);
+  assert.ok(Math.max(...xs) - Math.min(...xs) > 10);
+  assert.ok(xs.some((x, i) => i > 0 && x < xs[i - 1]));
+  assert.deepEqual([g.nodes[1].x, g.nodes[1].y], [10, 0]);
+});

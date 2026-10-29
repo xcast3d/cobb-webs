@@ -26,6 +26,35 @@ test("demo controls, brush physics, welcome and cleanup", async ({ page }) => {
   await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+test("installation modal copies instructions and downloads the embed", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Add it to your site" }).click();
+  const dialog = page.getByRole("dialog", {
+    name: "Add Cobb Webs to your site.",
+  });
+  await expect(dialog).toBeVisible();
+  await expect(dialog.locator("#embed-code")).toContainText("data-cobb-webs");
+  await expect(dialog.locator("#embed-code")).toContainText(
+    'data-cobbwebsbug="true"',
+  );
+  const download = page.waitForEvent("download");
+  await page.getByRole("link", { name: "Download JavaScript" }).click();
+  expect((await download).suggestedFilename()).toBe("cobb-webs.min.js");
+  await page.getByRole("button", { name: "Done" }).click();
+  await expect(dialog).not.toBeVisible();
+});
+test("demo credits Xcast3D", async ({ page }) => {
+  await page.goto("/");
+  await page.keyboard.press("Escape");
+  const credit = page.getByRole("link", {
+    name: "Built with love by Xcast3D",
+  });
+  await expect(credit).toBeVisible();
+  await expect(credit).toHaveAttribute("href", "https://xcast3d.com/");
+});
 test("standalone API isolates host CSS and disposes listeners/timers", async ({
   page,
 }) => {
@@ -78,6 +107,12 @@ test("mobile and reduced motion can enter without animation", async ({
   await page.screenshot({ path: "test-results/mobile-reduced.png" });
   await page.getByRole("button", { name: "Enter site" }).click();
   await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(page.locator("#studio-actions")).not.toBeVisible();
+  await page.getByRole("button", { name: "Open studio menu" }).click();
+  await expect(page.locator("#studio-actions")).toBeVisible();
+  await expect(
+    page.getByRole("link", { name: "View on GitHub" }),
+  ).toHaveAttribute("href", "https://github.com/xcast3d/cobb-webs");
 });
 test("built classic embed auto-initializes without demo markup", async ({
   page,
@@ -101,12 +136,37 @@ test("built classic embed auto-initializes without demo markup", async ({
   await expect(page.locator("#host-button")).toHaveText("Host site");
 });
 
+test("optional web bug tunes, replays, and survives scene dismissal", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.evaluate(async () => {
+    const { show } = await import("/src/index.js");
+    show({ days: 127, bugs: false, cobbwebsbug: true });
+  });
+  const bug = page.locator("cobb-webs-bug");
+  await expect(bug).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await page.getByRole("button", { name: "Open Cobb Webs settings" }).click();
+  await page.getByRole("slider", { name: "Web density" }).fill("82");
+  await page.getByRole("button", { name: "Replay cobwebs" }).click();
+  await expect(page.locator("cobb-webs-scene")).toHaveCount(1);
+  await page.keyboard.press("Escape");
+  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await expect(bug).toHaveCount(1);
+  await page.evaluate(async () => (await import("/src/index.js")).destroy());
+  await expect(bug).toHaveCount(0);
+});
+
 test("exports and mobile dark scene remain usable after resize", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/");
   await page.screenshot({ path: "test-results/mobile-dark.png" });
+  await page.getByRole("button", { name: "Open studio menu" }).click();
   await page.getByRole("button", { name: "Tune the scene" }).click();
   const svgDownload = page.waitForEvent("download");
   await page.getByRole("button", { name: "SVG", exact: true }).click();
@@ -160,4 +220,137 @@ test("standalone art tool has no scene and exports custom-sized artwork", async 
   expect((await download).suggestedFilename()).toMatch(/\.json$/);
   await page.screenshot({ path: "test-results/art-generator.png" });
   expect(errors).toEqual([]);
+});
+
+test("replay refreshes web and lighting controls and restores moving light", async ({
+  page,
+}) => {
+  await page.emulateMedia({ reducedMotion: "no-preference" });
+  await page.goto("/");
+  const read = () =>
+    page.evaluate(() =>
+      Object.fromEntries(
+        [
+          "seed",
+          "layers",
+          "coverage",
+          "density",
+          "structure",
+          "variation",
+          "sag",
+          "clusters",
+          "thickness",
+          "position",
+          "direction",
+          "intensity",
+          "warmth",
+          "fill",
+        ].map((id) => [id, document.getElementById(id).value]),
+      ),
+    );
+  const before = await read();
+  await page.getByRole("button", { name: "Tune the scene" }).click();
+  await page.locator("#motion").uncheck();
+  await page.getByRole("button", { name: "Replay" }).click();
+  const after = await read();
+  expect(after.seed).not.toEqual(before.seed);
+  expect([after.layers, after.density, after.coverage]).not.toEqual([
+    before.layers,
+    before.density,
+    before.coverage,
+  ]);
+  expect([after.position, after.direction, after.warmth]).not.toEqual([
+    before.position,
+    before.direction,
+    before.warmth,
+  ]);
+  await expect(page.locator("#motion")).toBeChecked();
+  await expect(page.locator("#preset")).toHaveValue("custom");
+  for (const id of ["layers", "density", "position", "intensity"])
+    expect(
+      await page
+        .locator(`#${id}`)
+        .evaluate(
+          (el) => el.previousElementSibling.querySelector("output").value,
+        ),
+    ).toEqual(after[id]);
+  const pixels = () =>
+    page.locator("cobb-webs-scene canvas.lighting").evaluate(async (c) => {
+      const pixels = c
+        .getContext("2d")
+        .getImageData(0, 0, c.width, c.height).data;
+      const digest = await crypto.subtle.digest("SHA-256", pixels);
+      return Array.from(new Uint8Array(digest));
+    });
+  const initial = await pixels();
+  await page.waitForTimeout(1500);
+  expect(await pixels()).not.toEqual(initial);
+  await page.locator("#motion").uncheck();
+  await page.waitForTimeout(120);
+  const frozen = await pixels();
+  await page.waitForTimeout(300);
+  expect(await pixels()).toEqual(frozen);
+});
+
+test("scene silk defaults to lighting color across the wider temperature range", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "Tune the scene" }).click();
+  await expect(page.locator("#silk")).toHaveValue("light");
+  await page.locator("#motion").uncheck();
+  await page.locator("#fill").fill("0");
+  await page.locator("#warmth").fill("0");
+  await page.waitForTimeout(120);
+  await page.screenshot({ path: "test-results/cool-light.png" });
+  await page.locator("#warmth").fill("100");
+  await page.waitForTimeout(120);
+  await page.screenshot({ path: "test-results/warm-light.png" });
+  await page.getByRole("button", { name: "Replay" }).click();
+  await expect(page.locator("#silk")).toHaveValue("light");
+});
+
+test("dust glints change brightness in a stationary beam and reuse glow sprites", async ({
+  page,
+}) => {
+  await page.goto("/");
+  const result = await page.evaluate(async () => {
+    const { Atmosphere } = await import("/src/lighting/atmosphere.js");
+    const { LightField } = await import("/src/lighting/light-field.js");
+    const light = new LightField({
+      position: 50,
+      direction: 50,
+      intensity: 100,
+      fill: 0,
+      motion: false,
+    });
+    light.resize(160, 100);
+    const mask = document.createElement("canvas"),
+      dust = document.createElement("canvas");
+    const atmosphere = new Atmosphere(mask, dust, light);
+    atmosphere.resize(160, 100, 1);
+    atmosphere.motes.forEach((m) => {
+      m.x = 80;
+      m.y = 50;
+    });
+    atmosphere.drawDust(0, 0);
+    const before = Array.from(
+      atmosphere.dctx.getImageData(0, 0, 160, 100).data,
+    );
+    const sprites = atmosphere.glows.size;
+    atmosphere.drawDust(1500, 0);
+    const after = Array.from(atmosphere.dctx.getImageData(0, 0, 160, 100).data);
+    return {
+      changed: before.some((v, i) => v !== after[i]),
+      sprites,
+      reused: sprites === atmosphere.glows.size,
+      alpha: atmosphere.dctx.globalAlpha,
+      blend: atmosphere.dctx.globalCompositeOperation,
+    };
+  });
+  expect(result.changed).toBe(true);
+  expect(result.sprites).toBeGreaterThan(0);
+  expect(result.reused).toBe(true);
+  expect(result.alpha).toBe(1);
+  expect(result.blend).toBe("source-over");
 });

@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "vite build && npm run build:embed && npm run build:generator",
+    "build": "node scripts/clean-dist.js && vite build && npm run build:embed && npm run build:generator",
     "preview": "vite preview --host 127.0.0.1",
     "test": "node --test tests/*.test.js",
     "test:browser": "playwright test",

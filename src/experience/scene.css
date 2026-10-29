@@ -79,6 +79,14 @@ canvas {
   padding: 0;
   transition: filter 0.3s;
 }
+.switch:focus-visible {
+  outline: none;
+}
+.switch:focus-visible .lever {
+  box-shadow:
+    0 0 10px 3px #f4d49599,
+    2px 3px 5px #000a;
+}
 .switch:hover {
   filter: brightness(0.75);
 }

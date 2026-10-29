@@ -31,8 +31,10 @@ export class SilkRenderer {
         : config.silk === "white"
           ? [1, 1, 1]
           : [0.87, 0.94, 1];
+    // Neutral silk reflects the local illuminant directly. Optional material
+    // tints remain available to the standalone art generator.
     const rgb = [l.r, l.g, l.b].map((v, i) =>
-      Math.round(mix(v, 240, 0.45) * tint[i]),
+      Math.round(v * (config.silk === "light" ? 1 : tint[i])),
     );
     const width =
       (["radial", "frame", "support"].includes(e.kind) ? 0.72 : 0.43) *
@@ -60,7 +62,7 @@ export class SilkRenderer {
         s = this.style(e, a, b, config);
       const alpha = Math.round(s.alpha * 24) / 24,
         width = Math.max(0.2, Math.round(s.width * 5) / 5),
-        rgb = s.rgb.map((v) => Math.round(v / 16) * 16),
+        rgb = s.rgb.map((v) => Math.min(255, Math.round(v / 8) * 8)),
         key = `${rgb}:${alpha}:${width}`;
       if (!batches.has(key))
         batches.set(key, { path: new Path2D(), alpha, width, rgb });

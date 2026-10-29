@@ -28,10 +28,29 @@ select:focus-visible {
   display: none !important;
 }
 .site {
+  position: relative;
   min-height: 100vh;
-  padding: 130px max(6vw, 24px) 60px;
+  padding: 130px max(6vw, 24px) 100px;
   background:
     radial-gradient(ellipse at 10% 5%, #d5e1d7, transparent 60%), #f2efe7;
+}
+.xcast-credit {
+  position: absolute;
+  right: max(6vw, 24px);
+  bottom: 30px;
+  color: #68697a;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.025em;
+  text-decoration: none;
+  transition: color 0.2s ease;
+}
+.xcast-credit span {
+  margin: 0 4px;
+  color: #f04d73;
+}
+.xcast-credit:hover {
+  color: #303641;
 }
 .site header {
   display: flex;
@@ -109,7 +128,9 @@ select:focus-visible {
 }
 .mark {
   color: #d8c096;
-  font-size: 25px;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 auto;
 }
 .studio-brand small {
   font:
@@ -139,18 +160,32 @@ select:focus-visible {
   border-radius: 5px;
   font-size: 11px;
 }
-.studio-bar button {
+.studio-bar button,
+.studio-bar .github-link {
   border: 1px solid #ffffff25;
   background: transparent;
   color: #c8d4d7;
   padding: 9px 13px;
   border-radius: 6px;
   font-size: 11px;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.studio-bar .github-link:hover {
+  border-color: #ffffff55;
+  color: #fff;
+}
+#studio-menu {
+  display: none;
 }
 .studio-bar #configure {
   background: #d3c19e;
   color: #232a2c;
   border-color: #d3c19e;
+}
+.studio-bar #install {
+  border-color: #d3c19e66;
+  color: #e5d8bf;
 }
 .studio-bar #configure span {
   padding-left: 15px;
@@ -302,10 +337,145 @@ select:focus-visible {
   margin-top: 10px;
   color: #d4c19e;
 }
+#install-dialog {
+  width: min(620px, calc(100vw - 32px));
+  padding: 0;
+  border: 1px solid #b8ced12e;
+  border-radius: 18px;
+  background: #152028;
+  color: #dce5e8;
+  box-shadow: 0 35px 120px #000c;
+}
+#install-dialog::backdrop {
+  background: #081015b8;
+  backdrop-filter: blur(8px);
+}
+.install-heading {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 30px 32px 20px;
+}
+.install-kicker {
+  color: #b9a987;
+  font:
+    9px ui-monospace,
+    monospace;
+  letter-spacing: 0.14em;
+}
+.install-heading h2 {
+  margin: 9px 0 0;
+  font-size: clamp(25px, 5vw, 36px);
+  line-height: 1.08;
+  letter-spacing: -0.045em;
+  font-weight: 540;
+}
+#install-close {
+  align-self: flex-start;
+  border: 0;
+  background: transparent;
+  color: #a9b6bc;
+  font-size: 25px;
+}
+.install-intro {
+  margin: 0;
+  padding: 0 32px 23px;
+  max-width: 540px;
+  color: #94a5ad;
+  font-size: 13px;
+  line-height: 1.65;
+}
+.install-steps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1px;
+  margin: 0;
+  padding: 0 32px;
+  list-style-position: inside;
+}
+.install-steps li {
+  padding: 16px;
+  background: #1d2a32;
+  color: #d9e1e4;
+  font-size: 12px;
+}
+.install-steps span {
+  display: block;
+  margin: 5px 0 0 18px;
+  color: #84969f;
+  font-size: 10px;
+}
+.install-code {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 16px 32px 0;
+  padding: 15px;
+  border: 1px solid #ffffff14;
+  border-radius: 9px;
+  background: #0e171d;
+}
+.install-code code {
+  flex: 1;
+  overflow-wrap: anywhere;
+  color: #c5d2d7;
+  font:
+    11px/1.6 ui-monospace,
+    monospace;
+  user-select: all;
+}
+.install-code button,
+.install-actions button {
+  border: 1px solid #ffffff20;
+  border-radius: 6px;
+  background: #22323c;
+  color: #cbd7dc;
+  padding: 8px 11px;
+  font-size: 10px;
+}
+#install-feedback {
+  display: block;
+  min-height: 17px;
+  margin: 7px 32px 0;
+  color: #d4c19e;
+  font-size: 10px;
+}
+.install-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 9px;
+  padding: 8px 32px 0;
+}
+#download-embed {
+  padding: 10px 16px;
+  border-radius: 7px;
+  background: #d3c19e;
+  color: #20292d;
+  text-decoration: none;
+  font-size: 11px;
+  font-weight: 650;
+}
+.install-note {
+  margin: 22px 0 0;
+  padding: 16px 32px 20px;
+  border-top: 1px solid #ffffff12;
+  color: #788b94;
+  font-size: 10px;
+  line-height: 1.6;
+}
+.install-note code {
+  color: #aebcc2;
+}
 @media (max-width: 700px) {
+  .xcast-credit {
+    right: auto;
+    left: 50%;
+    width: max-content;
+    transform: translateX(-50%);
+    text-align: center;
+  }
   .studio-bar {
-    padding: 10px 14px;
-    flex-wrap: wrap;
+    padding: 12px 14px;
     gap: 7px;
   }
   .studio-brand {
@@ -315,10 +485,26 @@ select:focus-visible {
     font-size: 8px;
   }
   .studio-actions {
-    width: 100%;
+    display: none;
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 10px;
+    width: min(310px, calc(100vw - 20px));
+    padding: 14px;
+    flex-wrap: wrap;
     gap: 8px;
+    border: 1px solid #ffffff18;
+    border-radius: 10px;
+    background: #10171df5;
+    box-shadow: 0 18px 60px #0008;
+    backdrop-filter: blur(20px);
+  }
+  .studio-actions.open {
+    display: flex;
   }
   .studio-actions label {
+    width: calc(50% - 4px);
+    justify-content: space-between;
     font-size: 9px;
     gap: 4px;
   }
@@ -326,14 +512,46 @@ select:focus-visible {
     padding: 7px 8px;
     font-size: 10px;
   }
-  .studio-actions #configure {
+  .studio-actions button,
+  .studio-actions .github-link {
+    flex: 1 1 calc(50% - 4px);
+    text-align: center;
+  }
+  #studio-menu {
+    display: grid;
+    width: 38px;
+    height: 36px;
     margin-left: auto;
+    padding: 9px;
+    place-content: center;
+    gap: 4px;
+  }
+  #studio-menu span {
+    display: block;
+    width: 17px;
+    height: 1px;
+    background: #d8e1e4;
+    transition:
+      transform 0.2s ease,
+      opacity 0.2s ease;
+  }
+  #studio-menu[aria-expanded="true"] span:first-child {
+    transform: translateY(5px) rotate(45deg);
+  }
+  #studio-menu[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0;
+  }
+  #studio-menu[aria-expanded="true"] span:last-child {
+    transform: translateY(-5px) rotate(-45deg);
+  }
+  .studio-actions #install {
+    order: 5;
   }
   .studio-actions #configure span {
     display: none;
   }
   #panel {
-    top: 99px;
+    top: 68px;
     width: min(330px, calc(100vw - 24px));
     right: 12px;
   }
@@ -345,6 +563,24 @@ select:focus-visible {
   }
   .site h1 {
     margin-top: 60px;
+  }
+  .install-heading,
+  .install-intro {
+    padding-left: 22px;
+    padding-right: 22px;
+  }
+  .install-steps {
+    grid-template-columns: 1fr;
+    padding: 0 22px;
+  }
+  .install-code {
+    margin-left: 22px;
+    margin-right: 22px;
+    flex-direction: column;
+  }
+  .install-actions {
+    padding-left: 22px;
+    padding-right: 22px;
   }
 }
 

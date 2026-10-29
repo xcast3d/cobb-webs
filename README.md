@@ -11,7 +11,7 @@ npm install
 npm run dev
 ```
 
-Open http://127.0.0.1:5173. **Tune the scene** exposes geometry and lighting controls; **Art generator** opens the standalone artwork tool. Replay preserves the seed and settings. New seed changes only the seed. Days away and detail reset growth-related settings.
+Open http://127.0.0.1:5173. **Tune the scene** exposes geometry and lighting controls; **Art generator** opens the standalone artwork tool. Replay randomizes the seed, all web sliders, lighting-matched silk, and lighting, and turns interaction and light movement back on. Days away and detail selections remain unchanged. Restore silk preserves the current settings. New seed changes only the seed. Days away and detail reset growth-related settings.
 
 ```sh
 npm test                  # Pure geometry, solver, lighting, visit policy
@@ -45,13 +45,16 @@ Build, then host `dist/embed/cobb-webs.min.js` on your site or CDN:
   data-cobb-webs
   data-min-days="14"
   data-preset="moonlit-attic"
+  data-cobbwebsbug="true"
   defer
 ></script>
 ```
 
 The first visit stores a timestamp without showing the scene. Returning after the minimum days shows it once per tab session. Storage is local to the host origin; blocked storage fails quietly. For a preview add `data-test="true" data-days="127"`.
 
-Supported attributes: `data-min-days`, `data-test`, `data-days`, `data-preset`, `data-seed`, `data-silk` (`silver`, `white`, `gold`), `data-message` (with `{days}`), `data-button`, `data-bugs`. There are no runtime network requests beyond loading the script.
+Supported attributes: `data-min-days`, `data-test`, `data-days`, `data-preset`, `data-seed`, `data-silk` (`light`, `silver`, `white`, `gold`), `data-message` (with `{days}`), `data-button`, `data-bugs`, and `data-cobbwebsbug`. There are no runtime network requests beyond loading the script.
+
+`data-cobbwebsbug="true"` is optional and disabled by default. It leaves a small spiderweb button in the lower corner after the scene closes. Visitors can replay the experience and adjust web density, light level, interactive silk, and slow light movement. The full studio controls remain demo-only.
 
 Or use the ES module:
 
@@ -65,6 +68,7 @@ const scene = show({
   preset: "moonlit-attic",
   web: { seed: "COBB-0804", layers: 4, density: 65, silk: "silver" },
   lighting: { intensity: 85, fill: 24, warmth: 18, motion: true },
+  cobbwebsbug: true,
 });
 scene.updateWeb({ density: 80 });
 scene.updateLight({ fill: 50 });
@@ -79,7 +83,7 @@ destroy();
 - Continuous capture turns advance across radial spokes, with perimeter frame threads and deterministic patch aging.
 - Fixed 120 Hz integration makes physics independent of display refresh rate. Pinned nodes remain fixed; constraints distribute correction by inverse mass and resist tension only.
 - Cursor attraction gathers nearby silk. Sustained strain breaks it; connected-component traversal distinguishes supported silk from falling pieces. Untouched webs remain still.
-- Slack curves straighten as endpoints pull apart. Silk brightness responds to strand orientation and local light color.
+- Slack curves straighten as endpoints pull apart. Silk brightness responds to strand orientation and local light color. Scene silk defaults to `light`, reflecting the local illuminant without a white washout. The light temperature spans icy blue, neutral white, and amber.
 - Cool window light and warm side spill share a cached, interpolated color field. Window shadows widen with distance, light falls off across the scene, and optional slow motion models cloud cover.
 - The darkness mask reuses its pixel buffer. Strands are batched by quantized color/brightness/width, avoiding thousands of per-frame gradients.
 
@@ -95,7 +99,8 @@ The generator is a separate release boundary:
 - `src/generator/app.js` and `style.css`: the artist-facing tool.
 - `src/engine/`: shared geometry, physics, and rendering used by both products.
 - `npm run build:generator`: independent ES module and classic-script library in `dist/generator/`.
-- `dist/demo/generator.html`: built tool page, alongside the demo; deploy its referenced assets with it.
+- `dist/index.html`: built demo entry point, ready to deploy at a subpath such as `/cobb-webs/`.
+- `dist/generator.html`: built art tool page, alongside the demo; deploy its referenced assets with it.
 
 ```js
 import { createGenerator } from "./cobb-web-generator.js";

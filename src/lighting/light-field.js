@@ -31,8 +31,9 @@ export class LightField {
   resize(width, height) {
     this.width = width;
     this.height = height;
-    this.cols = 100;
-    this.rows = Math.max(24, Math.round((100 * height) / width));
+    const spacing = Math.max(4, Math.max(width, height) / 384);
+    this.cols = Math.max(32, Math.ceil(width / spacing));
+    this.rows = Math.max(32, Math.ceil(height / spacing));
     this.grid = new Float32Array(this.cols * this.rows * 4);
     this.update(0);
   }
@@ -42,14 +43,27 @@ export class LightField {
   update(time) {
     const o = this.options,
       t = o.motion ? time * 0.001 : 0;
-    const origin = o.position / 100,
-      angle = (o.direction - 50) * 0.012 + Math.sin(t * 0.19) * 0.018;
+    // Overlapping slow currents move both the source and the beam. The old
+    // one-degree rotation alone was almost invisible against the wide soft beam.
+    const drift = o.motion
+      ? Math.sin(t * 0.31) * 0.025 + Math.sin(t * 0.13) * 0.012
+      : 0;
+    const sway = o.motion
+      ? Math.sin(t * 0.27) * 0.035 + Math.sin(t * 0.11) * 0.014
+      : 0;
+    const origin = o.position / 100 + drift,
+      angle = (o.direction - 50) * 0.012 + sway;
     this.direction = { x: Math.sin(angle), y: Math.cos(angle) };
-    const rgb = [
-      mix(145, 255, o.warmth / 100),
-      mix(192, 192, o.warmth / 100),
-      mix(250, 124, o.warmth / 100),
-    ];
+    // Artistic temperature range: icy blue → neutral white → amber.
+    // A neutral midpoint avoids the desaturated grey of a direct blue/orange mix.
+    const warmth = clamp(o.warmth / 100, 0, 1);
+    const cool = [85, 150, 255],
+      neutral = [235, 235, 225],
+      warm = [255, 125, 42];
+    const from = warmth < 0.5 ? cool : neutral;
+    const to = warmth < 0.5 ? neutral : warm;
+    const blend = warmth < 0.5 ? warmth * 2 : (warmth - 0.5) * 2;
+    const rgb = from.map((value, i) => mix(value, to[i], blend));
     for (let y = 0; y < this.rows; y++)
       for (let x = 0; x < this.cols; x++) {
         const u = x / (this.cols - 1),

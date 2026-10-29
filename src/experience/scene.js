@@ -8,7 +8,7 @@ import { growthForDays } from "../engine/config.js";
 export function createScene(options = {}) {
   const host = document.createElement("cobb-webs-scene");
   const root = host.attachShadow({ mode: "open" });
-  root.innerHTML = `<style>${css}</style><section class="room" role="dialog" aria-modal="true" aria-label="Welcome back scene" tabindex="-1"><canvas class="lighting" aria-hidden="true"></canvas><canvas class="dust" aria-hidden="true"></canvas><canvas class="silk" aria-hidden="true"></canvas><button class="switch" aria-label="Turn on the light"><span class="plate"></span><span class="slot"></span><span class="lever"></span></button><span class="hint">Turn on the light</span><div class="bugs" aria-hidden="true"></div><section class="welcome" aria-labelledby="welcome-title" hidden><div class="eyebrow">A little time has passed</div><h2 id="welcome-title">Welcome back.</h2><p></p><button class="enter">Enter site →</button></section><button class="skip">Skip scene · Esc</button><span class="instruction">Brush the silk. Find the light.</span></section>`;
+  root.innerHTML = `<style>${css}</style><section class="room" role="dialog" aria-modal="true" aria-label="Welcome back scene" tabindex="-1"><canvas class="lighting" aria-hidden="true"></canvas><canvas class="dust" aria-hidden="true"></canvas><canvas class="silk" aria-hidden="true"></canvas><button class="switch" aria-label="Turn on the light"><span class="plate"></span><span class="slot"></span><span class="lever"></span></button><span class="hint"></span><div class="bugs" aria-hidden="true"></div><section class="welcome" aria-labelledby="welcome-title" hidden><div class="eyebrow">A little time has passed</div><h2 id="welcome-title">Welcome back.</h2><p></p><button class="enter">Enter site →</button></section><button class="skip">Skip scene · Esc</button><span class="instruction">Brush the silk. Find the light.</span></section>`;
   document.body.append(host);
   const $ = (s) => root.querySelector(s),
     room = $(".room"),
@@ -28,12 +28,14 @@ export function createScene(options = {}) {
   const engine = new WebEngine($(".silk"), light, {
     ...growthForDays(options.days, options.detail),
     ...options.web,
+    silk: options.web?.silk ?? "light",
     physics: !reduced && options.web?.physics !== false,
   });
   let state = "dark",
     raf = 0,
     last = 0,
     lastLight = -Infinity,
+    lightTime = 0,
     drag = false,
     destroyed = false;
   const emit = (name) =>
@@ -70,8 +72,9 @@ export function createScene(options = {}) {
     if (destroyed || state !== "dark") return;
     const dt = last ? Math.min(0.05, (time - last) / 1000) : 0;
     last = time;
-    if (time - lastLight > 80) {
-      light.update(time);
+    lightTime += dt * 1000;
+    if (time - lastLight > 40) {
+      light.update(lightTime);
       atmosphere.drawMask();
       const r = sw.getBoundingClientRect();
       sw.style.setProperty(
@@ -197,7 +200,7 @@ export function createScene(options = {}) {
       raf = requestAnimationFrame(tick);
   });
   resize();
-  sw.focus();
+  room.focus({ preventScroll: true });
   emit("shown");
   if (reduced) turnOn();
   else raf = requestAnimationFrame(tick);

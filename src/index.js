@@ -34,7 +34,7 @@ function ensureWebBug() {
           seed: globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36),
         },
         lighting: { ...replayOptions?.lighting, ...lighting },
-        cobbwebsbug: true,
+        cobwebsBug: true,
       });
     },
   });
@@ -56,7 +56,7 @@ export function show(options = {}) {
       options.onDestroy?.();
     },
   });
-  if (options.cobbwebsbug) ensureWebBug();
+  if (options.cobwebsBug) ensureWebBug();
   return active;
 }
 export function init(options = {}) {
@@ -72,12 +72,12 @@ export function init(options = {}) {
     options.days ??
     (decision.days > 0 ? decision.days : (options.minDays ?? 14));
   replayOptions = { ...options, days };
-  if (options.cobbwebsbug) ensureWebBug();
+  if (options.cobwebsBug) ensureWebBug();
   return options.always || decision.show ? show({ ...options, days }) : null;
 }
 // Classic script auto-init is opt-in; ES module users call init/show themselves.
 const script = typeof document === "undefined" ? null : document.currentScript;
-if (script?.hasAttribute("data-cobb-webs")) {
+if (script?.hasAttribute("data-cobwebs")) {
   const d = script.dataset;
   const start = () =>
     init({
@@ -91,7 +91,7 @@ if (script?.hasAttribute("data-cobb-webs")) {
       sentence: d.sentence,
       button: d.button,
       bugs: d.bugs !== "false",
-      cobbwebsbug: d.cobbwebsbug === "true",
+      cobwebsBug: d.cobwebsBug === "true",
       web: { seed: d.seed, silk: d.silk },
     });
   if (document.readyState === "loading")

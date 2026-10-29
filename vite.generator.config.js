@@ -4,10 +4,10 @@ export default defineConfig({
     outDir: "dist/generator",
     lib: {
       entry: "src/generator/index.js",
-      name: "CobbWebGenerator",
+      name: "CobwebGenerator",
       formats: ["es", "iife"],
       fileName: (format) =>
-        format === "es" ? "cobb-web-generator.js" : "cobb-web-generator.min.js",
+        format === "es" ? "cobweb-generator.js" : "cobweb-generator.min.js",
     },
   },
 });

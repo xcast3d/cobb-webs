@@ -4,10 +4,9 @@ export default defineConfig({
     outDir: "dist/embed",
     lib: {
       entry: "src/index.js",
-      name: "CobbWebs",
+      name: "Cobwebs",
       formats: ["es", "iife"],
-      fileName: (format) =>
-        format === "es" ? "cobb-webs.js" : "cobb-webs.min.js",
+      fileName: (format) => (format === "es" ? "cobwebs.js" : "cobwebs.min.js"),
     },
   },
 });

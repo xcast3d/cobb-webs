@@ -6,7 +6,7 @@ export function visitDecision({
   test = false,
   storage,
   session,
-  key = "cobb-webs:last-visit",
+  key = "cobwebs:last-visit",
 } = {}) {
   let previous = null,
     seen = false;

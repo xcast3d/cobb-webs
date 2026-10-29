@@ -2,6 +2,8 @@
 
 A small, isolated “welcome back” scene: brush through old silk, switch on the light, and return to the website beneath it. Version 0.7.0.
 
+**Demo:** [xcast3d.com/cobwebs](https://xcast3d.com/cobwebs)
+
 ## Develop
 
 Use Node 22.12+ (tested with Node 26).
@@ -55,8 +57,6 @@ The first visit stores a timestamp without showing the scene. Returning after th
 
 Replace the example `src` with the exact public URL where you uploaded `cobwebs.min.js`. For WordPress, add the script through a footer-code tool or immediately before `</body>` in the theme, then purge WordPress and CDN caches. To serve the file from the active theme, upload it to the theme's `js` directory and use:
 
-The demo's download link includes a unique build query such as `?v=mabc123` so CDN and browser caches fetch the current embed after every rebuild. The downloaded filename remains `cobwebs.min.js`; site owners can use their own version query when replacing a deployed copy.
-
 ```php
 <script
   src="<?php echo esc_url(get_stylesheet_directory_uri()); ?>/js/cobwebs.min.js"
@@ -68,6 +68,8 @@ The demo's download link includes a unique build query such as `?v=mabc123` so C
 ```
 
 `get_stylesheet_directory_uri()` follows the active child theme; use `get_template_directory_uri()` only when the file belongs to the parent theme. Opening the resolved script URL directly must show JavaScript rather than an HTML error page.
+
+The demo's download link includes a unique build query such as `?v=mabc123` so CDN and browser caches fetch the current embed after every rebuild. The downloaded filename remains `cobwebs.min.js`; site owners can use their own version query when replacing a deployed copy.
 
 Supported attributes: `data-min-days`, `data-always`, `data-test`, `data-days`, `data-preset`, `data-seed`, `data-silk` (`light`, `silver`, `white`, `gold`), `data-eyebrow`, `data-title`, `data-sentence`, `data-button`, `data-bugs`, and `data-cobwebs-bug`. There are no runtime network requests beyond loading the script.
 
@@ -197,5 +199,3 @@ const pngBlob = await tool.png();
 ```
 
 The library owns no DOM UI, storage, event listeners, or animation loop. A caller can supply pointer coordinates in artwork pixels via `move`, enable `physics`, call `frame(seconds)` to simulate, and call `release()` when a gesture ends. Artboard dimensions are 64–4096 per side; PNG outputs twice those dimensions. Resizing regenerates the geometry. It can also be loaded as a classic script with the `CobwebGenerator` global.
-
-Nothing has been published. Before a public release, choose package names, licensing and artwork-use terms, and add settings import and documentation for artists. The generator and welcome-back embed can be versioned and distributed separately when needed.

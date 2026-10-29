@@ -41,7 +41,7 @@ Build, then host `dist/embed/cobb-webs.min.js` on your site or CDN:
 
 ```html
 <script
-  src="https://xcast3d.com/cobb-webs/embed/cobb-webs.min.js"
+  src="https://example.com/assets/cobb-webs.min.js"
   data-cobb-webs
   data-min-days="14"
   data-preset="moonlit-attic"
@@ -52,7 +52,7 @@ Build, then host `dist/embed/cobb-webs.min.js` on your site or CDN:
 
 The first visit stores a timestamp without showing the scene. Returning after the minimum days shows it once per tab session. Storage is local to the host origin; blocked storage fails quietly. For a preview add `data-test="true" data-days="127"`.
 
-For WordPress, add the script through a footer-code tool or immediately before `</body>` in the theme, then purge WordPress and CDN caches. The hosted URL above is the simplest option. To serve the file from the active theme, upload it to the theme's `js` directory and use:
+Replace the example `src` with the exact public URL where you uploaded `cobb-webs.min.js`. For WordPress, add the script through a footer-code tool or immediately before `</body>` in the theme, then purge WordPress and CDN caches. To serve the file from the active theme, upload it to the theme's `js` directory and use:
 
 ```php
 <script
@@ -72,7 +72,7 @@ Set `data-always="true"` to show the experience on every page load, ignoring ela
 
 ```html
 <script
-  src="https://xcast3d.com/cobb-webs/embed/cobb-webs.min.js"
+  src="https://example.com/assets/cobb-webs.min.js"
   data-cobb-webs
   data-always="true"
   data-eyebrow="Something has been waiting"

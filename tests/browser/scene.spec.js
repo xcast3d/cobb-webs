@@ -38,7 +38,7 @@ test("installation modal copies instructions and downloads the embed", async ({
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("#embed-code")).toContainText("data-cobb-webs");
   await expect(dialog.locator("#embed-code")).toContainText(
-    "https://xcast3d.com/cobb-webs/embed/cobb-webs.min.js",
+    "https://example.com/assets/cobb-webs.min.js",
   );
   await expect(dialog.locator("#embed-code")).toContainText(
     'data-cobbwebsbug="true"',

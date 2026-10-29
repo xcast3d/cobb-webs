@@ -41,7 +41,7 @@ Build, then host `dist/embed/cobb-webs.min.js` on your site or CDN:
 
 ```html
 <script
-  src="/cobb-webs.min.js"
+  src="https://xcast3d.com/cobb-webs/embed/cobb-webs.min.js"
   data-cobb-webs
   data-min-days="14"
   data-preset="moonlit-attic"
@@ -52,9 +52,72 @@ Build, then host `dist/embed/cobb-webs.min.js` on your site or CDN:
 
 The first visit stores a timestamp without showing the scene. Returning after the minimum days shows it once per tab session. Storage is local to the host origin; blocked storage fails quietly. For a preview add `data-test="true" data-days="127"`.
 
-Supported attributes: `data-min-days`, `data-test`, `data-days`, `data-preset`, `data-seed`, `data-silk` (`light`, `silver`, `white`, `gold`), `data-message` (with `{days}`), `data-button`, `data-bugs`, and `data-cobbwebsbug`. There are no runtime network requests beyond loading the script.
+For WordPress, add the script through a footer-code tool or immediately before `</body>` in the theme, then purge WordPress and CDN caches. The hosted URL above is the simplest option. To serve the file from the active theme, upload it to the theme's `js` directory and use:
+
+```php
+<script
+  src="<?php echo esc_url(get_stylesheet_directory_uri()); ?>/js/cobb-webs.min.js"
+  data-cobb-webs
+  data-min-days="14"
+  data-cobbwebsbug="true"
+  defer
+></script>
+```
+
+`get_stylesheet_directory_uri()` follows the active child theme; use `get_template_directory_uri()` only when the file belongs to the parent theme. Opening the resolved script URL directly must show JavaScript rather than an HTML error page.
+
+Supported attributes: `data-min-days`, `data-always`, `data-test`, `data-days`, `data-preset`, `data-seed`, `data-silk` (`light`, `silver`, `white`, `gold`), `data-eyebrow`, `data-title`, `data-sentence`, `data-button`, `data-bugs`, and `data-cobbwebsbug`. There are no runtime network requests beyond loading the script.
+
+Set `data-always="true"` to show the experience on every page load, ignoring elapsed-day and session checks. In always mode, the default sentence is simply “We kept the lights off for you.” Custom sentences may use `{days}` and `{dayLabel}`.
+
+```html
+<script
+  src="https://xcast3d.com/cobb-webs/embed/cobb-webs.min.js"
+  data-cobb-webs
+  data-always="true"
+  data-eyebrow="Something has been waiting"
+  data-title="Welcome in."
+  data-sentence="We kept the lights off for you."
+  data-button="Enter site →"
+  defer
+></script>
+```
 
 `data-cobbwebsbug="true"` is optional and disabled by default. It leaves a small spiderweb button in the lower corner after the scene closes. Visitors can replay the experience and adjust web density, light level, interactive silk, and slow light movement. The full studio controls remain demo-only.
+
+### Customizing the welcome card
+
+The experience uses Shadow DOM so the host site's ordinary CSS cannot accidentally restyle it. Site owners can intentionally customize the welcome card by setting `--cobb-*` properties on the generated `<cobb-webs-scene>` element:
+
+```css
+cobb-webs-scene {
+  --cobb-font-family: "Inter", sans-serif;
+  --cobb-card-width: 520px;
+  --cobb-card-padding: 48px;
+  --cobb-card-background: #fff;
+  --cobb-card-color: #17212b;
+  --cobb-card-border: 1px solid #dbe2e8;
+  --cobb-card-radius: 24px;
+  --cobb-card-shadow: 0 30px 100px rgb(0 0 0 / 35%);
+  --cobb-card-align: left;
+  --cobb-eyebrow-color: #7b5cff;
+  --cobb-eyebrow-size: 11px;
+  --cobb-eyebrow-spacing: 0.18em;
+  --cobb-title-size: 44px;
+  --cobb-title-spacing: -0.04em;
+  --cobb-title-weight: 700;
+  --cobb-sentence-color: #637080;
+  --cobb-sentence-size: 17px;
+  --cobb-button-background: #17212b;
+  --cobb-button-color: #fff;
+  --cobb-button-border: 0;
+  --cobb-button-radius: 999px;
+  --cobb-button-padding: 14px 24px;
+  --cobb-button-weight: 650;
+}
+```
+
+Only declare the properties you want to override. Content remains controlled independently through `data-eyebrow`, `data-title`, `data-sentence`, and `data-button`.
 
 Or use the ES module:
 

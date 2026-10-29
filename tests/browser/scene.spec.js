@@ -38,6 +38,9 @@ test("installation modal copies instructions and downloads the embed", async ({
   await expect(dialog).toBeVisible();
   await expect(dialog.locator("#embed-code")).toContainText("data-cobb-webs");
   await expect(dialog.locator("#embed-code")).toContainText(
+    "https://xcast3d.com/cobb-webs/embed/cobb-webs.min.js",
+  );
+  await expect(dialog.locator("#embed-code")).toContainText(
     'data-cobbwebsbug="true"',
   );
   const download = page.waitForEvent("download");
@@ -66,21 +69,29 @@ test("standalone API isolates host CSS and disposes listeners/timers", async ({
     const before = document.querySelector(".site").outerHTML;
     const style = document.createElement("style");
     style.textContent =
-      "button{background:red!important;font-size:80px!important}canvas{display:none!important}";
+      "button{background:red!important;font-size:80px!important}canvas{display:none!important}cobb-webs-scene{--cobb-card-background:rgb(1, 2, 3);--cobb-card-radius:24px;--cobb-button-background:rgb(4, 5, 6)}";
     document.head.append(style);
     const trigger = document.querySelector("#replay");
     trigger.focus();
     const s = show({ days: 42, bugs: false });
     const button = s.host.shadowRoot.querySelector(".skip");
+    const card = s.host.shadowRoot.querySelector(".welcome");
+    const enter = s.host.shadowRoot.querySelector(".enter");
     const canvas = s.host.shadowRoot.querySelector(".silk");
     const isolated =
       getComputedStyle(button).fontSize === "11px" &&
       getComputedStyle(canvas).display !== "none";
+    const themeValues = {
+      cardBackground: getComputedStyle(card).backgroundColor,
+      cardRadius: getComputedStyle(card).borderRadius,
+      buttonBackground: getComputedStyle(enter).backgroundColor,
+    };
     s.turnOn();
     s.destroy();
     style.remove();
     return {
       isolated,
+      themeValues,
       hostUnchanged: before === document.querySelector(".site").outerHTML,
       focus: document.activeElement === trigger,
       count: document.querySelectorAll("cobb-webs-scene").length,
@@ -88,6 +99,11 @@ test("standalone API isolates host CSS and disposes listeners/timers", async ({
   });
   expect(result).toEqual({
     isolated: true,
+    themeValues: {
+      cardBackground: "rgb(1, 2, 3)",
+      cardRadius: "24px",
+      buttonBackground: "rgb(4, 5, 6)",
+    },
     hostUnchanged: true,
     focus: true,
     count: 0,
@@ -158,6 +174,55 @@ test("optional web bug tunes, replays, and survives scene dismissal", async ({
   await expect(bug).toHaveCount(1);
   await page.evaluate(async () => (await import("/src/index.js")).destroy());
   await expect(bug).toHaveCount(0);
+});
+
+test("first-visit bug preview uses minimum days instead of demo fallback", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.evaluate(async () => {
+    const api = await import("/src/index.js");
+    api.destroy();
+    localStorage.removeItem("cobb-webs:last-visit");
+    sessionStorage.removeItem("cobb-webs:last-visit");
+    api.init({ minDays: 1, cobbwebsbug: true, bugs: false });
+  });
+  await expect(page.locator("cobb-webs-scene")).toHaveCount(0);
+  await page.getByRole("button", { name: "Open Cobb Webs settings" }).click();
+  await page.getByRole("button", { name: "Replay cobwebs" }).click();
+  await page.getByRole("button", { name: "Turn on the light" }).click();
+  await expect(page.locator("cobb-webs-scene .welcome p")).toContainText(
+    "It's been 1 day since",
+  );
+});
+
+test("always mode bypasses visits and supports custom card labels", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await page.keyboard.press("Escape");
+  await page.evaluate(() => {
+    localStorage.removeItem("cobb-webs:last-visit");
+    sessionStorage.removeItem("cobb-webs:last-visit");
+    const script = document.createElement("script");
+    script.src = "/dist/embed/cobb-webs.min.js";
+    script.dataset.cobbWebs = "";
+    script.dataset.always = "true";
+    script.dataset.eyebrow = "Something has been waiting";
+    script.dataset.title = "Welcome in.";
+    script.dataset.button = "Come inside →";
+    script.dataset.bugs = "false";
+    document.body.append(script);
+  });
+  await expect(page.locator("cobb-webs-scene")).toHaveCount(1);
+  await page.getByRole("button", { name: "Turn on the light" }).click();
+  await expect(page.getByText("Something has been waiting")).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: "Welcome in." }),
+  ).toBeVisible();
+  await expect(page.getByText("We kept the lights off for you.")).toBeVisible();
+  await expect(page.getByRole("button", { name: "Come inside" })).toBeVisible();
 });
 
 test("exports and mobile dark scene remain usable after resize", async ({

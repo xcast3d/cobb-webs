@@ -27,12 +27,11 @@ function ensureWebBug() {
     replay({ web, lighting }) {
       show({
         ...replayOptions,
-        days: replayOptions?.days ?? 127,
+        days: replayOptions.days,
         web: {
           ...replayOptions?.web,
           ...web,
-          seed:
-            globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36),
+          seed: globalThis.crypto?.randomUUID?.() ?? Math.random().toString(36),
         },
         lighting: { ...replayOptions?.lighting, ...lighting },
         cobbwebsbug: true,
@@ -69,11 +68,12 @@ export function init(options = {}) {
     /* Storage may be blocked. */
   }
   const decision = visitDecision({ ...options, storage, session });
-  replayOptions = options;
+  const days =
+    options.days ??
+    (decision.days > 0 ? decision.days : (options.minDays ?? 14));
+  replayOptions = { ...options, days };
   if (options.cobbwebsbug) ensureWebBug();
-  return decision.show
-    ? show({ ...options, days: options.days ?? decision.days })
-    : null;
+  return options.always || decision.show ? show({ ...options, days }) : null;
 }
 // Classic script auto-init is opt-in; ES module users call init/show themselves.
 const script = typeof document === "undefined" ? null : document.currentScript;
@@ -85,7 +85,10 @@ if (script?.hasAttribute("data-cobb-webs")) {
       test: d.test === "true",
       days: d.days ? Number(d.days) : undefined,
       preset: d.preset,
-      message: d.message,
+      always: d.always === "true",
+      eyebrow: d.eyebrow,
+      title: d.title,
+      sentence: d.sentence,
       button: d.button,
       bugs: d.bugs !== "false",
       cobbwebsbug: d.cobbwebsbug === "true",

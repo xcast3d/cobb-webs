@@ -15,6 +15,9 @@ export function createScene(options = {}) {
     sw = $(".switch"),
     card = $(".welcome"),
     enter = $(".enter");
+  card.querySelector(".eyebrow").textContent =
+    options.eyebrow ?? "A little time has passed";
+  card.querySelector("h2").textContent = options.title ?? "Welcome back.";
   const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
   const previousFocus = document.activeElement,
     abort = new AbortController(),
@@ -107,10 +110,15 @@ export function createScene(options = {}) {
       () => {
         state = "lit";
         card.hidden = false;
-        card.querySelector("p").textContent = (
-          options.message ??
-          "It's been {days} days since you were last here. We kept the lights off for you."
-        ).replaceAll("{days}", String(options.days ?? 127));
+        const days = options.days ?? 127;
+        const sentence = options.sentence;
+        card.querySelector("p").textContent = sentence
+          ? sentence
+              .replaceAll("{days}", String(days))
+              .replaceAll("{dayLabel}", days === 1 ? "day" : "days")
+          : options.always
+            ? "We kept the lights off for you."
+            : `It's been ${days} ${days === 1 ? "day" : "days"} since you were last here. We kept the lights off for you.`;
         enter.textContent = options.button ?? "Enter site →";
         enter.focus();
       },
